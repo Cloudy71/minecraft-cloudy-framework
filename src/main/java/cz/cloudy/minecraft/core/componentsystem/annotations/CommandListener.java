@@ -17,5 +17,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
 public @interface CommandListener {
+    /**
+     * Command name
+     *
+     * @return String
+     */
     String value(); // Command label
 }

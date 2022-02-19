@@ -39,10 +39,11 @@ public class Database {
     private IDatabaseProcessor<?> processor = null;
 
     /**
-     * @param data
-     * @return
+     * Initializes database processor.
+     *
+     * @param data Connection data
      */
-    public IDatabaseProcessor<?> initializeProcessor(DatabaseConnectionData data) {
+    public void initializeProcessor(DatabaseConnectionData data) {
         processor = ReflectionUtils.newInstance(data.engine().getEngineClass());
         Preconditions.checkNotNull(processor);
 
@@ -54,25 +55,27 @@ public class Database {
         } catch (SQLException e) {
             logger.error("", e);
         }
-
-        return processor;
     }
 
     /**
-     * @return
+     * Gets current database processor.
+     *
+     * @return Database processor
      */
     public IDatabaseProcessor<?> getProcessor() {
         return processor;
     }
 
     /**
-     * @param engine
-     * @param host
-     * @param port
-     * @param user
-     * @param pass
-     * @param db
-     * @return
+     * Generates database connection data.
+     *
+     * @param engine Database engine
+     * @param host   Host
+     * @param port   Port
+     * @param user   User
+     * @param pass   Password
+     * @param db     Database
+     * @return Database connection data
      */
     public DatabaseConnectionData generateDatabaseConnectionDataFromAttributes(DatabaseEngine engine, String host, int port, String user, String pass,
                                                                                String db) {
@@ -87,9 +90,11 @@ public class Database {
     }
 
     /**
-     * @param query
-     * @param parameters
-     * @return
+     * Processes query object.
+     *
+     * @param query      Query object
+     * @param parameters Parameters
+     * @return Query result
      */
     public QueryResult processQuery(Query query, Map<String, Object> parameters) {
         try {
@@ -101,19 +106,23 @@ public class Database {
     }
 
     /**
-     * @param query
-     * @return
+     * Processes query
+     *
+     * @param query Query
+     * @return Query result
      */
     public QueryResult processQuery(Query query) {
         return processQuery(query, null);
     }
 
     /**
-     * @param clazz
-     * @param primaryKey
-     * @param fetchLevel
-     * @param <T>
-     * @return
+     * Finds entity by its primary key value.
+     *
+     * @param clazz      Entity type
+     * @param primaryKey Primary key value
+     * @param fetchLevel Fetch level
+     * @param <T>        Entity type generic
+     * @return Fetched database entity or null if not found
      */
     @Cached(informative = true)
     public <T extends DatabaseEntity> T findEntity(Class<T> clazz, Object primaryKey, FetchLevel fetchLevel) {
@@ -121,10 +130,12 @@ public class Database {
     }
 
     /**
-     * @param clazz
-     * @param primaryKey
-     * @param <T>
-     * @return
+     * Finds entity by its primary key value.
+     *
+     * @param clazz      Entity type
+     * @param primaryKey Primary key value
+     * @param <T>        Entity type generic
+     * @return Fetched database entity or null if not found
      */
     @Cached(informative = true)
     public <T extends DatabaseEntity> T findEntity(Class<T> clazz, Object primaryKey) {
@@ -132,34 +143,40 @@ public class Database {
     }
 
     /**
-     * @param clazz
-     * @param conditions
-     * @param parameters
-     * @param fetchLevel
-     * @param <T>
-     * @return
+     * Finds entity by database conditions.
+     *
+     * @param clazz      Entity type
+     * @param conditions Database conditions
+     * @param parameters Parameters
+     * @param fetchLevel Fetch level
+     * @param <T>        Entity type generic
+     * @return Fetched database entity or null if not found
      */
     public <T extends DatabaseEntity> T findEntity(Class<T> clazz, String conditions, Map<String, Object> parameters, FetchLevel fetchLevel) {
         return databaseEntityMapper.findEntity(clazz, conditions, parameters, fetchLevel);
     }
 
     /**
-     * @param clazz
-     * @param conditions
-     * @param parameters
-     * @param fetchLevel
-     * @param <T>
-     * @return
+     * Finds entities by database conditions.
+     *
+     * @param clazz      Entity type
+     * @param conditions Database conditions
+     * @param parameters Parameters
+     * @param fetchLevel Fetch level
+     * @param <T>        Entity type generic
+     * @return Fetched database entities
      */
     public <T extends DatabaseEntity> Set<T> findEntities(Class<T> clazz, String conditions, Map<String, Object> parameters, FetchLevel fetchLevel) {
         return databaseEntityMapper.findEntities(clazz, conditions, parameters, fetchLevel);
     }
 
     /**
-     * @param clazz
-     * @param fetchLevel
-     * @param <T>
-     * @return
+     * Finds all entities.
+     *
+     * @param clazz      Entity type
+     * @param fetchLevel Fetch level
+     * @param <T>        Entity type generic
+     * @return Fetched database entities
      */
     @Cached(informative = true)
     public <T extends DatabaseEntity> Set<T> findEntities(Class<T> clazz, FetchLevel fetchLevel) {
@@ -167,9 +184,11 @@ public class Database {
     }
 
     /**
-     * @param clazz
-     * @param <T>
-     * @return
+     * Finds all entities.
+     *
+     * @param clazz Entity type
+     * @param <T>   Entity type generic
+     * @return Fetched database entities
      */
     @Cached(informative = true)
     public <T extends DatabaseEntity> Set<T> findEntities(Class<T> clazz) {
@@ -177,25 +196,55 @@ public class Database {
     }
 
     /**
-     * @param entity
+     * Deletes entity by its primary key value
+     *
+     * @param type       Entity type
+     * @param primaryKey Entity primary key value
+     * @since 1.18.6
+     */
+    public void deleteEntity(Class<? extends DatabaseEntity> type, Object primaryKey) {
+        databaseEntityMapper.deleteEntity(type, primaryKey);
+    }
+
+    /**
+     * Deletes all entities of specified type and conditions
+     *
+     * @param type       Entity type
+     * @param conditions Conditions
+     * @param parameters Parameters
+     * @since 1.18.5
+     */
+    public void deleteEntities(Class<? extends DatabaseEntity> type, String conditions, Map<String, Object> parameters) {
+        databaseEntityMapper.deleteEntities(type, conditions, parameters);
+    }
+
+    /**
+     * Loads entity.
+     *
+     * @param entity     Entity
+     * @param fetchLevel Fetch level
      */
     protected void loadEntity(DatabaseEntity entity, FetchLevel fetchLevel) {
         databaseEntityMapper.loadEntity(entity, fetchLevel);
     }
 
     /**
-     * @param entity
+     * Loads entity.
+     *
+     * @param entity Entity
      */
     protected void saveEntity(DatabaseEntity entity) {
         databaseEntityMapper.saveEntity(entity);
     }
 
     /**
-     * @param entity
+     * Deep saves entity.
+     *
+     * @param entity Entity
      */
     protected void fullSaveEntity(DatabaseEntity entity) {
         databaseEntityMapper.saveEntity(entity);
-        List<FieldScan> fields = databaseEntityMapper.getFieldScansForEntityClass(entity.getClass());
+        List<FieldScan> fields = databaseEntityMapper.getFieldScansForEntityType(entity.getClass());
         for (FieldScan field : fields) {
             if (field.foreignKey() == null)
                 continue;
@@ -207,6 +256,11 @@ public class Database {
         }
     }
 
+    /**
+     * Deletes entity
+     *
+     * @param entity Entity
+     */
     protected void deleteEntity(DatabaseEntity entity) {
         databaseEntityMapper.deleteEntity(entity);
     }

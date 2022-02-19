@@ -7,10 +7,11 @@
 package cz.cloudy.minecraft.core.componentsystem.types;
 
 import cz.cloudy.minecraft.core.CorePlugin;
+import cz.cloudy.minecraft.core.componentsystem.annotations.Component;
 
 /**
  * @author Cloudy
  */
-public record ComponentData(Object component, CorePlugin plugin) {
+public record ComponentData(Object component, Component annotation, CorePlugin plugin) {
 
 }

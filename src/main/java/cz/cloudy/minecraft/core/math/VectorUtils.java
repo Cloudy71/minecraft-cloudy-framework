@@ -6,13 +6,18 @@
 
 package cz.cloudy.minecraft.core.math;
 
-import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
 /**
  * @author Cloudy
  */
 public class VectorUtils {
+    /**
+     * Gets right direction of vector.
+     *
+     * @param direction Vector
+     * @return Right direction
+     */
     public static Vector getRightDirection(Vector direction) {
         return direction.clone().crossProduct(new Vector(1, 0, 0));
 //        Vector originalPosition = location.toVector();
@@ -25,6 +30,12 @@ public class VectorUtils {
 //        return newPosition.subtract(originalPosition).normalize();
     }
 
+    /**
+     * Gets up direction of vector.
+     *
+     * @param direction Vector
+     * @return Up direction
+     */
     public static Vector getUpDirection(Vector direction) {
         return direction.clone().crossProduct(new Vector(0, 1, 0));
 //        Vector originalPosition = location.toVector();
@@ -39,6 +50,12 @@ public class VectorUtils {
 //        return newPosition.subtract(originalPosition).normalize();
     }
 
+    /**
+     * Checks two vectors and swaps values if second edge vector coordinate is smaller than first edge vector coordinate.
+     *
+     * @param firstEdge  First edge vector
+     * @param secondEdge Second edge vector
+     */
     public static void boundingBoxNormalize(Vector firstEdge, Vector secondEdge) {
         if (firstEdge.getX() > secondEdge.getX()) {
             double x = firstEdge.getX();

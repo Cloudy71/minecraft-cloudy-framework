@@ -45,12 +45,24 @@ public abstract class CorePlugin
         super.onLoad();
     }
 
+    /**
+     * Invoked when loading has started.
+     */
     public abstract void onStart();
 
+    /**
+     * Invoked when loading has finished.
+     */
     public abstract void onLoaded();
 
+    /**
+     * Invoked when unloading has finished.
+     */
     public abstract void onUnloaded();
 
+    /**
+     * After plugin initialization post process is invoked for database tables creation.
+     */
     public void doPostProcess() {
         Database database = ComponentLoader.get(Database.class);
         if (database.getProcessor() == null) {
@@ -66,20 +78,32 @@ public abstract class CorePlugin
         componentLoader.startComponents(this);
     }
 
+    /**
+     * Returns plugin's component loader.
+     *
+     * @return Component loader
+     */
     public ComponentLoader getComponentLoader() {
         return componentLoader;
     }
 
+    /**
+     * Returns if database is enabled for this plugin.
+     *
+     * @return True if database is enabled
+     */
     public boolean getCoreDatabaseAttribute() {
         return getConfig().getBoolean("core.database", false);
     }
 
     /**
-     * @return
+     * Constructs database connection data from configuration file.
+     *
+     * @return Database connection data
      * @deprecated Move somewhere else
      */
     @Deprecated(forRemoval = true)
-    public DatabaseConnectionData getDatabaseConnectionData() {
+    protected DatabaseConnectionData getDatabaseConnectionData() {
         String engineString = getConfig().getString("database.engine", "mysql");
         DatabaseEngine engine = DatabaseEngine.resolveEngine(engineString);
 

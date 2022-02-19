@@ -14,6 +14,7 @@ import cz.cloudy.minecraft.core.componentsystem.ReflectionUtils;
 import cz.cloudy.minecraft.core.componentsystem.annotations.Component;
 import cz.cloudy.minecraft.core.componentsystem.interfaces.IComponent;
 import cz.cloudy.minecraft.core.data_transforming.interfaces.IDataTransformer;
+import cz.cloudy.minecraft.core.database.annotation.Transform;
 import cz.cloudy.minecraft.core.types.Pair;
 import org.slf4j.Logger;
 
@@ -50,14 +51,38 @@ public class DataTransformer
         }
     }
 
+    /**
+     * Gets unknown data transformer.
+     * Is often used when getting a transformer from {@link Transform} annotation.
+     *
+     * @param clazz Transformer type
+     * @return Data transformer of unknown types or null if not found
+     */
     public IDataTransformer<?, ?> getUnknownDataTransformer(Class<? extends IDataTransformer<?, ?>> clazz) {
         return transformersByType.get(clazz);
     }
 
+    /**
+     * Gets data transformer by known types.
+     *
+     * @param clazz Transformer type
+     * @param <T0>  Base type
+     * @param <T1>  Final type
+     * @return Data transformer of known types or null if not found
+     */
     public <T0, T1> IDataTransformer<T0, T1> getDataTransformer(Class<? extends IDataTransformer<T0, T1>> clazz) {
         return (IDataTransformer<T0, T1>) transformersByType.get(clazz);
     }
 
+    /**
+     * Gets data transformer by known types.
+     *
+     * @param class0 Base type
+     * @param class1 Final type
+     * @param <T0>   Base type
+     * @param <T1>   Final type
+     * @return Data transformer of known types or null if not found
+     */
     public <T0, T1> IDataTransformer<T0, T1> getDataTransformer(Class<T0> class0, Class<T1> class1) {
         if (transformersByConsumers.contains(class0, class1))
             return (IDataTransformer<T0, T1>) transformersByConsumers.get(class0, class1);

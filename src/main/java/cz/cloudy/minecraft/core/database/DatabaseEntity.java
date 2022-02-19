@@ -26,12 +26,28 @@ public abstract class DatabaseEntity {
     @Size(Size.IDSize)
     private long id = -1;
 
-    protected boolean replicated = false;
+    /**
+     * Replication status
+     */
+    protected boolean    replicated = false;
+    /**
+     * Current fetch level
+     */
     protected FetchLevel fetchLevel = FetchLevel.Full;
 
+    /**
+     * Protected default constructor.
+     */
     protected DatabaseEntity() {
     }
 
+    /**
+     * Getter for automatically generated entity id.
+     * This method always returns -1 if entity has different primary key or entity is not replicated.
+     * For replication status check {@link DatabaseEntity#isReplicated()}.
+     *
+     * @return Entity's ID
+     */
     public long getId() {
         return id;
     }
@@ -80,14 +96,21 @@ public abstract class DatabaseEntity {
 
     /**
      * Saves all object data by its primary key.
-     * Keep in mind that object must be fully loaded except for foreign objects
-     * This method also does not save foreign objects since they are mapped only as ID in the database
+     * Keep in mind that object must be fully loaded except for foreign objects.
+     * This method also does not save foreign objects since they are mapped only as ID in the database.
+     * In case there is need to save foreign entities as well, use {@link DatabaseEntity#fullSave()}.
      */
     public void save() {
         Preconditions.checkState(isFetched(), "Object must be loaded first");
         ComponentLoader.get(Database.class).saveEntity(this);
     }
 
+    /**
+     * Saves all object data by its primary key asynchronously.
+     * Keep in mind that object must be fully loaded except for foreign objects
+     * This method also does not save foreign objects since they are mapped only as ID in the database.
+     * In case there is need to save foreign entities as well, use {@link DatabaseEntity#fullSave()}.
+     */
     public void saveAsync() {
         Bukkit.getScheduler().runTaskAsynchronously(
                 CoreRunnerPlugin.singleton,
@@ -96,7 +119,7 @@ public abstract class DatabaseEntity {
     }
 
     /**
-     * Saves all data as save does, however this also saves all foreign key entities if they are loaded
+     * Saves all data as {@link DatabaseEntity#save()} does, however this also saves all foreign key entities if they are loaded.
      */
     public void fullSave() {
         Preconditions.checkState(isFetched(), "Object must be loaded first");
@@ -104,9 +127,24 @@ public abstract class DatabaseEntity {
     }
 
     /**
+     * Saves all data as {@link DatabaseEntity#save()} does, however this also saves all foreign key entities if they are loaded.
+     * Saving is processed asynchronously.
      *
-     * @param $fetchLevel
-     * @return
+     * @since 1.18.6
+     */
+    public void fullSaveAsync() {
+        Bukkit.getScheduler().runTaskAsynchronously(
+                CoreRunnerPlugin.singleton,
+                this::save
+        );
+    }
+
+    /**
+     * Loads this entity into specified fetch level.
+     * Entity cannot be loaded into lower fetch leven than its actual.
+     *
+     * @param $fetchLevel Fetch level
+     * @return Loaded current entity object
      */
     public DatabaseEntity load(FetchLevel $fetchLevel) {
         if (fetchLevel == $fetchLevel || fetchLevel.isLowerThan($fetchLevel))
@@ -117,7 +155,7 @@ public abstract class DatabaseEntity {
     }
 
     /**
-     * This fetches all object data by its primary id
+     * This fetches all object data by its primary id.
      *
      * @return Fully loaded current entity object
      */
@@ -126,7 +164,7 @@ public abstract class DatabaseEntity {
     }
 
     /**
-     * Force reloads current entity object
+     * Force reloads current entity object.
      *
      * @return Reloaded current entity object
      */
@@ -138,13 +176,16 @@ public abstract class DatabaseEntity {
     }
 
     /**
-     * Deletes this entity from database
+     * Deletes this entity from database.
      */
     public void delete() {
         Preconditions.checkState(replicated, "Entity is not replicated");
         ComponentLoader.get(Database.class).deleteEntity(this);
     }
 
+    /**
+     * Deletes this entity from database asynchronously.
+     */
     public void deleteAsync() {
         Bukkit.getScheduler().runTaskAsynchronously(
                 CoreRunnerPlugin.singleton,

@@ -60,6 +60,12 @@ public class ComponentLoader {
         public Class<?>  clazz;
         public Component data;
 
+        /**
+         * Default constructor
+         *
+         * @param clazz Component type
+         * @param data  Component data
+         */
         public ComponentLoadObject(Class<?> clazz, Component data) {
             this.clazz = clazz;
             this.data = data;
@@ -72,14 +78,27 @@ public class ComponentLoader {
     private static final List<IClassScanListener>     classScanListeners     = new ArrayList<>();
     private static final List<IComponentLoadListener> componentLoadListeners = new ArrayList<>();
 
+    /**
+     * Default constructor
+     */
     public ComponentLoader() {
         componentScans = new ArrayList<>();
     }
 
+    /**
+     * Adds class scan listener
+     *
+     * @param listener Listener
+     */
     public void addClassScanListener(IClassScanListener listener) {
         classScanListeners.add(listener);
     }
 
+    /**
+     * Adds component load listener
+     *
+     * @param listener Listener
+     */
     public void addComponentLoadListener(IComponentLoadListener listener) {
         componentLoadListeners.add(listener);
     }
@@ -101,6 +120,11 @@ public class ComponentLoader {
         getComponentScansFromClass(clazz.getSuperclass(), scanList);
     }
 
+    /**
+     * Reads all component scans from class
+     *
+     * @param clazz Class
+     */
     public void readComponentScansFromClass(Class<?> clazz) {
         List<ComponentScan> scanList = new ArrayList<>();
         getComponentScansFromClass(clazz, scanList);
@@ -112,6 +136,11 @@ public class ComponentLoader {
         }
     }
 
+    /**
+     * Loads all components for plugin.
+     *
+     * @param caller Plugin
+     */
     public void loadAllComponents(CorePlugin caller) {
         logger.info("Reading all {} component scans for components", componentScans.size());
         List<ComponentLoadObject> classList = new ArrayList<>();
@@ -180,12 +209,9 @@ public class ComponentLoader {
                     continue;
                 }
                 classList.add(new ComponentLoadObject(clazz, component));
-                // TODO: Sorting by dependencies
             }
             packageList.add(new AbstractMap.SimpleEntry<>(componentScan, classes.toArray(new Class[0])));
         }
-
-//        List<ComponentLoadObject> sortedClassList = sortComponentLoadList(classList);
 
         // Component creating
         for (ComponentLoadObject componentLoadObject : classList) {
@@ -201,7 +227,7 @@ public class ComponentLoader {
                 Object obj = constructor.newInstance();
 
                 registerComponentAnnotations(caller, obj);
-                componentMap.put(componentLoadObject.clazz, new ComponentData(obj, caller));
+                componentMap.put(componentLoadObject.clazz, new ComponentData(obj, componentLoadObject.data, caller));
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
                 logger.error("Failed to create component", e);
             }
@@ -213,7 +239,8 @@ public class ComponentLoader {
             Preconditions.checkNotNull(component);
             List<Field> fields = ReflectionUtils.getAllClassFields(componentLoadObject.clazz);
             for (Field field : fields) {
-                if (field.getAnnotation(Component.class) == null)
+                Component annotation;
+                if ((annotation = field.getAnnotation(Component.class)) == null)
                     continue;
 
                 Class<?> componentClass = field.getType();
@@ -221,10 +248,18 @@ public class ComponentLoader {
                         componentMap.containsKey(componentClass),
                         "Component " + componentLoadObject.clazz.getSimpleName() + " could not find its dependency " + componentClass.getSimpleName()
                 );
+                Object dependencyComponent = componentMap.get(componentClass).component();
+                Preconditions.checkState(
+                        (annotation.wireType() == Component.WireType.All || annotation.wireType() == Component.WireType.AutoWireOnly) &&
+                        (annotation.wiredFrom().length == 0 ||
+                         Arrays.stream(annotation.wiredFrom())
+                               .anyMatch(type -> type.isAssignableFrom(componentLoadObject.clazz))),
+                        "Component " + componentLoadObject.clazz.getSimpleName() + " tried to wire forbidden dependency " + componentClass.getSimpleName()
+                );
 
                 field.setAccessible(true);
                 try {
-                    field.set(component, componentMap.get(componentClass).component());
+                    field.set(component, dependencyComponent);
                 } catch (IllegalAccessException e) {
                     logger.error("Error setting component dependency object", e);
                 }
@@ -256,6 +291,11 @@ public class ComponentLoader {
         componentScans.clear();
     }
 
+    /**
+     * Registers cron executor for core's runner plugin.
+     *
+     * @param coreRunnerPlugin Core's runner plugin
+     */
     public void registerCronExecutor(CoreRunnerPlugin coreRunnerPlugin) {
         coreRunnerPlugin.getServer().getScheduler().scheduleSyncRepeatingTask(
                 coreRunnerPlugin,
@@ -274,12 +314,26 @@ public class ComponentLoader {
         );
     }
 
+    /**
+     * Starts all components
+     *
+     * @param caller Plugin
+     */
     public void startComponents(CorePlugin caller) {
         componentMap.values().stream()
                     .filter(componentData -> componentData.plugin() == caller && componentData.component() instanceof IComponent)
                     .forEach(componentData -> ((IComponent) componentData.component()).onStart());
     }
 
+    /**
+     * Checks configuration conditions for class.
+     * This is used in case component's existence is conditioned.
+     * Same could be used for database entity class.
+     *
+     * @param caller Plugin
+     * @param clazz  type
+     * @return True if configuration condition passed
+     */
     public boolean checkConfiguration(CorePlugin caller, Class<?> clazz) {
         CheckConfiguration checkConfiguration = clazz.getAnnotation(CheckConfiguration.class);
         if (checkConfiguration == null)
@@ -438,10 +492,23 @@ public class ComponentLoader {
         logger.info("Registered action listener on " + component.getClass().getSimpleName() + ".\"" + name + "\".");
     }
 
+    /**
+     * Get the owner of component object
+     *
+     * @param component Component object
+     * @return Component's plugin
+     */
     public static Plugin getComponentOwner(Object component) {
         return componentMap.get(component.getClass()).plugin();
     }
 
+    /**
+     * Notifies all methods annotated with {@link ActionListener}.
+     *
+     * @param componentClass Component class
+     * @param name           Action name
+     * @param data           Action data
+     */
     public static void notifyActionListeners(Class<?> componentClass, String name, Object[] data) {
         String actionName = componentMap.get(componentClass).plugin().getName() + "." + name;
         if (!actionListeners.containsKey(actionName))
@@ -452,19 +519,45 @@ public class ComponentLoader {
         }
     }
 
+    /**
+     * Gets component without checking its existence.
+     *
+     * @param clazz Component type
+     * @param <T>   Component type generic
+     * @return Component or null if component does not exist or wire type is unsupported
+     */
     @Nullable
     public static <T> T getNullable(@NotNull Class<T> clazz) {
         Preconditions.checkNotNull(clazz);
         if (!componentMap.containsKey(clazz))
             return null;
 
-        return (T) componentMap.get(clazz).component();
+        ComponentData data = componentMap.get(clazz);
+        return data.annotation().wireType() == Component.WireType.All || data.annotation().wireType() == Component.WireType.ManualOnly
+                ? (T) data.component()
+                : null;
     }
 
+    /**
+     * Gets component with existence checking.
+     * If no component exists or wire type is unsupported {@link NullPointerException} is thrown.
+     *
+     * @param clazz Component type
+     * @param <T>   Component type generic
+     * @return Component
+     */
     public static <T> T get(@NotNull Class<T> clazz) {
         return Preconditions.checkNotNull(getNullable(clazz));
     }
 
+    /**
+     * Gets component without existence checking.
+     * If no component exists or wire type is unsupported runnable is not invoked.
+     *
+     * @param clazz    Component type
+     * @param runnable Runnable
+     * @param <T>      Component type generic
+     */
     public static <T> void getAndRun(@NotNull Class<T> clazz, Consumer<T> runnable) {
         T component = getNullable(clazz);
         if (component == null)

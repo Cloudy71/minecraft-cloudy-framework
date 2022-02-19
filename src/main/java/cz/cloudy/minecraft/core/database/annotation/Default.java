@@ -17,5 +17,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Default {
+    /**
+     * Default database value.
+     * String must always be in between quote characters to ensure provided value is always a string.
+     *
+     * @return String
+     */
     String value(); // Literal value => 'String', CURRENT_TIMESTAMP(), ...
 }

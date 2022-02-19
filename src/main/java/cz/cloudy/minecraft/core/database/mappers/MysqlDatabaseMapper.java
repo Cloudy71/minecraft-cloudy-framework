@@ -164,8 +164,8 @@ public class MysqlDatabaseMapper
                                              StringBuilder selectQuery, List<String> joinQuery, Map<String, String> translationMap,
                                              List<FieldScan> ignoreForeignScans) {
         DatabaseEntityMapper entityMapper = ComponentLoader.get(DatabaseEntityMapper.class);
-        List<FieldScan> fields = entityMapper.getFieldScansForEntityClass(clazz);
-        ClassScan classScan = entityMapper.getClassScanForEntityClass(clazz);
+        List<FieldScan> fields = entityMapper.getFieldScansForEntityType(clazz);
+        ClassScan classScan = entityMapper.getClassScanForEntityType(clazz);
         int tableId = joinQuery.size();
         String tableLabel = "t" + tableId;
         if (conditions != null)

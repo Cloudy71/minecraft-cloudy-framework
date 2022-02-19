@@ -58,6 +58,12 @@ public class MapController
         }
     }
 
+    /**
+     * Requests new map.
+     *
+     * @param world World
+     * @return Map view
+     */
     public MapView requestMap(World world) {
         MapRecord mapRecord = database.findEntity(
                 MapRecord.class,
@@ -125,6 +131,12 @@ public class MapController
 //        }
 //    }
 
+    /**
+     * Increase usage of map record.
+     *
+     * @param mapRecord     Map record
+     * @param chunkPosition Chunk position
+     */
     protected void placeMapRecordUsage(MapRecord mapRecord, Int2 chunkPosition) {
         MapRecordChunk chunk = new MapRecordChunk();
         chunk.setMapRecord(mapRecord);
@@ -134,6 +146,12 @@ public class MapController
         mapRecord.saveAsync();
     }
 
+    /**
+     * Decrease usage of map record.
+     *
+     * @param mapRecord     Map record
+     * @param chunkPosition Chunk position
+     */
     protected void removeMapRecordUsage(MapRecord mapRecord, Int2 chunkPosition) {
         MapRecordChunk chunk = database.findEntity(
                 MapRecordChunk.class,
@@ -196,7 +214,7 @@ public class MapController
 //    }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onHangingBreakEvent(HangingBreakEvent e) {
+    private void onHangingBreakEvent(HangingBreakEvent e) {
         logger.info("HANGING BREAK: {}", e.getEntity());
         if (!(e.getEntity() instanceof ItemFrame itemFrame) || !(itemFrame.getItem().getItemMeta() instanceof MapMeta mapMeta) ||
             mapMeta.getMapView() == null)
@@ -219,7 +237,7 @@ public class MapController
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onPlayerItemFrameChangeEvent(PlayerItemFrameChangeEvent e) {
+    private void onPlayerItemFrameChangeEvent(PlayerItemFrameChangeEvent e) {
         logger.info("MATERIAL: {}", e.getItemStack().getType());
         logger.info("ACTION: {}", e.getAction());
         if (e.getItemStack().getType() != Material.FILLED_MAP || e.getAction() == PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE)

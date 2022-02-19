@@ -13,13 +13,19 @@ import cz.cloudy.minecraft.core.scoreboard.ScoreboardLogic;
  */
 public abstract class ChangeBasedScoreboardLogic
         extends ScoreboardLogic {
-    protected Object[] variables;
-    private   long     oldHash;
+    private long oldHash;
 
-    public ChangeBasedScoreboardLogic(Object... variables) {
-        this.variables = variables;
+    /**
+     * Default constructor.
+     */
+    public ChangeBasedScoreboardLogic() {
     }
 
+    /**
+     * Calculates current hash which is used for update notification.
+     *
+     * @return Current hash
+     */
     public abstract long calculateHash();
 
     @Override

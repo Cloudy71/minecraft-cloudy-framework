@@ -18,6 +18,11 @@ public class InfoCommandResponse
         implements ICommandResponseResolvable {
     private final String message;
 
+    /**
+     * Default constructor
+     *
+     * @param message Message
+     */
     public InfoCommandResponse(String message) {
         this.message = message;
     }

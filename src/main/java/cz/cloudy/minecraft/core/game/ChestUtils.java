@@ -17,6 +17,13 @@ import org.bukkit.block.DoubleChest;
 @Component
 public class ChestUtils {
 
+    /**
+     * Returns base block of chest
+     * Base block of single chest is the same chest, but base block of double chest is its left side chest
+     *
+     * @param refBlock Chest block
+     * @return Base block of chest
+     */
     public Block getBaseBlock(Block refBlock) {
         if (refBlock == null || !(refBlock.getState() instanceof Chest chest))
             return null;

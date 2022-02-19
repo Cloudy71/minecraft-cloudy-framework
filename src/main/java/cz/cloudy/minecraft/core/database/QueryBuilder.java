@@ -22,6 +22,9 @@ import java.util.List;
 public class QueryBuilder {
     private Query query;
 
+    /**
+     * Default constructor.
+     */
     protected QueryBuilder() {
     }
 
@@ -40,7 +43,7 @@ public class QueryBuilder {
 
     private String getFieldNames(Class<? extends DatabaseEntity> clazz, String fields) {
         String fieldPrefix = clazz.getSimpleName();
-        List<FieldScan> list = ComponentLoader.get(DatabaseEntityMapper.class).getFieldScansForEntityClass(clazz);
+        List<FieldScan> list = ComponentLoader.get(DatabaseEntityMapper.class).getFieldScansForEntityType(clazz);
         if (fields != null) {
             for (FieldScan fieldScan : list) {
                 fields = fields.replaceAll("\\$" + fieldScan.column().value(), fieldPrefix + "." + fieldScan.column().value());
@@ -57,9 +60,11 @@ public class QueryBuilder {
     }
 
     /**
-     * @param clazz
-     * @param fields
-     * @return
+     * Creates select query.
+     *
+     * @param clazz  Entity type
+     * @param fields Fields to select
+     * @return Self
      * @deprecated Not implemented yet
      */
     @Deprecated
@@ -73,8 +78,10 @@ public class QueryBuilder {
     }
 
     /**
-     * @param clazz
-     * @return
+     * Creates select query.
+     *
+     * @param clazz Entity type
+     * @return Self
      * @deprecated Not implemented yet
      */
     @Deprecated
@@ -83,9 +90,11 @@ public class QueryBuilder {
     }
 
     /**
-     * @param entityName
-     * @param condition
-     * @return
+     * Adds where condition to the query.
+     *
+     * @param entityName Entity name
+     * @param condition  Condition
+     * @return Self
      * @deprecated Not implemented yet
      */
     @Deprecated
@@ -94,9 +103,11 @@ public class QueryBuilder {
     }
 
     /**
-     * @param clazz
-     * @param condition
-     * @return
+     * Adds where condition to the query.
+     *
+     * @param clazz     Entity type
+     * @param condition Condition
+     * @return Self
      * @deprecated Not implemented yet
      */
     @Deprecated
@@ -105,9 +116,11 @@ public class QueryBuilder {
     }
 
     /**
-     * @param clazz
-     * @param condition
-     * @return
+     * Adds join to the query.
+     *
+     * @param clazz     Entity type
+     * @param condition Condition
+     * @return Self
      * @deprecated Not implemented yet
      */
     @Deprecated
@@ -116,18 +129,36 @@ public class QueryBuilder {
         return this;
     }
 
+    /**
+     * Creates raw DQL query.
+     *
+     * @param queryString Query string
+     * @return Self
+     */
     public QueryBuilder rawDQL(String queryString) {
         setQueryType(QueryType.RawDQL);
         ((RawDQLQuery) query).setQueryString(queryString);
         return this;
     }
 
+    /**
+     * Creates raw DML or DDL query.
+     *
+     * @param queryString Query string
+     * @return Self
+     */
     public QueryBuilder rawDMLOrDDL(String queryString) {
         setQueryType(QueryType.RawDMLOrDDL);
         ((RawDMLOrDDLQuery) query).setQueryString(queryString);
         return this;
     }
 
+    /**
+     * Sets statement type of the query.
+     *
+     * @param statementType Statement type
+     * @return Self
+     */
     public QueryBuilder statementType(int statementType) {
         if (!(query instanceof RawDMLOrDDLQuery rawDMLOrDDLQuery))
             return this;
@@ -136,7 +167,9 @@ public class QueryBuilder {
     }
 
     /**
-     * @return
+     * Sets query to be full fetch.
+     *
+     * @return Self
      * @deprecated Not implemented yet
      */
     @Deprecated
@@ -145,6 +178,11 @@ public class QueryBuilder {
         return this;
     }
 
+    /**
+     * Builds query.
+     *
+     * @return Built query
+     */
     public Query build() {
         return query;
     }

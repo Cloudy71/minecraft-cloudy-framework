@@ -22,6 +22,9 @@ public class SelectQuery
     private StringBuilder joinAllBuilder;
     private StringBuilder whereBuilder;
 
+    /**
+     * -
+     */
     public SelectQuery() {
         super(QueryType.Select);
 
@@ -31,18 +34,34 @@ public class SelectQuery
         whereBuilder = new StringBuilder();
     }
 
+    /**
+     * -
+     * @return -
+     */
     public StringBuilder getSelectBuilder() {
         return selectBuilder;
     }
 
+    /**
+     * -
+     * @return -
+     */
     public StringBuilder getFromBuilder() {
         return fromBuilder;
     }
 
+    /**
+     * -
+     * @return -
+     */
     public StringBuilder getJoinAllBuilder() {
         return joinAllBuilder;
     }
 
+    /**
+     * -
+     * @return -
+     */
     public StringBuilder getWhereBuilder() {
         return whereBuilder;
     }

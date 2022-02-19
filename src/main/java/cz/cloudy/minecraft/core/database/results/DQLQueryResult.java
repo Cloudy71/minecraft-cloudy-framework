@@ -33,6 +33,11 @@ public class DQLQueryResult
 
     private List<Map<String, Object>> processedDataMap;
 
+    /**
+     * Default constructor
+     *
+     * @param resultSet Result set
+     */
     public DQLQueryResult(ResultSet resultSet) {
         this.resultSet = resultSet;
         this.columns = new ArrayList<>();
@@ -65,6 +70,11 @@ public class DQLQueryResult
         return dataTable.size();
     }
 
+    /**
+     * Getter for result set.
+     *
+     * @return Result set
+     */
     public ResultSet getResultSet() {
         return resultSet;
     }
@@ -80,16 +90,16 @@ public class DQLQueryResult
     }
 
     @Override
-    public List<Object> getData(int rowNumber) {
-        Preconditions.checkState(dataTable.size() > rowNumber);
-        return dataTable.get(rowNumber);
+    public List<Object> getData(int rowIndex) {
+        Preconditions.checkState(dataTable.size() > rowIndex);
+        return dataTable.get(rowIndex);
     }
 
     @Override
-    public Map<String, Object> getDataMap(int rowNumber) {
-        Preconditions.checkState(dataTable.size() > rowNumber);
+    public Map<String, Object> getDataMap(int rowIndex) {
+        Preconditions.checkState(dataTable.size() > rowIndex);
         Map<String, Object> map = new HashMap<>();
-        List<Object> data = getData(rowNumber);
+        List<Object> data = getData(rowIndex);
         int size = data.size();
         for (int i = 0; i < size; i++) {
             map.put(columns.get(i), data.get(i));
@@ -97,6 +107,7 @@ public class DQLQueryResult
         return map;
     }
 
+    @Override
     public List<Map<String, Object>> getDataMapTable() {
         if (processedDataMap != null)
             return processedDataMap;

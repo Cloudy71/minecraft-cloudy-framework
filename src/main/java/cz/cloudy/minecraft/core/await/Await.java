@@ -3,34 +3,55 @@ package cz.cloudy.minecraft.core.await;
 import cz.cloudy.minecraft.core.componentsystem.types.CommandData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.*;
 
+/**
+ * @author Cloudy
+ */
 // TODO: Add timed consumers
 public class Await {
-    protected static final Map<Class<? extends Event>, Map<Object, List<AwaitConsumer<?>>>> events =
+    /**
+     *
+     */
+    protected static final Map<Class<? extends Event>, Map<Object, List<AwaitConsumer<?>>>> events                 =
             new HashMap<>();
-    protected static final Map<String, Map<UUID, List<AwaitConsumer<CommandData>>>> commands =
+    /**
+     *
+     */
+    protected static final Map<String, Map<UUID, List<AwaitConsumer<CommandData>>>>         commands               =
             new HashMap<>();
-    protected static final Set<AwaitConsumer<?>> dismissedConsumersList = new HashSet<>();
+    /**
+     *
+     */
+    protected static final Set<AwaitConsumer<?>>                                            dismissedConsumersList = new HashSet<>();
 
-//    private static final List<AwaitConsumer<?>> dismissedConsumersList = new ArrayList<>();
-//    private static AwaitConsumer<?> currentConsumer = null;
-
+    /**
+     * Awaits for specified player event.
+     *
+     * @param player    Player
+     * @param eventType EventType
+     * @param consumers Consumers
+     * @param <T>       Event type
+     */
     @SafeVarargs
     public static <T extends PlayerEvent> void playerEvent(Player player, Class<T> eventType, AwaitConsumer<T>... consumers) {
         for (AwaitConsumer<T> consumer : consumers) {
             consumer.created();
         }
         events.computeIfAbsent(eventType, aClass -> new HashMap<>())
-                .computeIfAbsent(player.getUniqueId(), o -> new ArrayList<>())
-                .addAll(Arrays.stream(consumers).toList());
+              .computeIfAbsent(player.getUniqueId(), o -> new ArrayList<>())
+              .addAll(Arrays.stream(consumers).toList());
     }
 
+    /**
+     * Awaits for specified player command.
+     *
+     * @param player    Player
+     * @param command   Command
+     * @param consumers Consumers
+     */
     @SafeVarargs
     public static void playerCommand(Player player, String command, AwaitConsumer<CommandData>... consumers) {
         for (AwaitConsumer<CommandData> consumer : consumers) {
@@ -41,6 +62,12 @@ public class Await {
                 .addAll(Arrays.stream(consumers).toList());
     }
 
+    /**
+     * Dismisses all awaits for player command.
+     *
+     * @param player  Player
+     * @param command Command
+     */
     public static void dismissPlayerCommand(Player player, String command) {
         if (!commands.containsKey(command) || !commands.get(command).containsKey(player.getUniqueId()))
             return;
@@ -50,6 +77,11 @@ public class Await {
         }
     }
 
+    /**
+     * Processes all awaits for specified event data.
+     *
+     * @param event Event data
+     */
     @SuppressWarnings("unchecked")
     public static void process(Event event) {
         if (!events.containsKey(event.getClass()))
@@ -84,6 +116,11 @@ public class Await {
         }
     }
 
+    /**
+     * Processes all awaits for command data.
+     *
+     * @param commandData Command data
+     */
     @SuppressWarnings("SuspiciousMethodCalls")
     public static void process(CommandData commandData) {
         if (!commandData.isPlayer() || !commands.containsKey(commandData.command().getName()))
@@ -113,6 +150,11 @@ public class Await {
         }
     }
 
+    /**
+     * Dismisses consumer instance and sets it for removal in the future.
+     *
+     * @param awaitConsumer Consumer instance
+     */
     protected static void dismiss(AwaitConsumer<?> awaitConsumer) {
         if (awaitConsumer == null)
             return;

@@ -26,8 +26,14 @@ import java.util.Map;
 @Component
 public class Scoreboard
         implements IComponent, Listener {
+    /**
+     * Scoreboard refresh interval.
+     */
     public static int SCOREBOARD_REFRESH_INTERVAL = 20 * 5;
 
+    /**
+     * Scoreboard map for every connected player.
+     */
     protected Map<Player, List<ScoreboardObject>> entries = new HashMap<>();
 
     private boolean schedulerCreated = false;
@@ -54,6 +60,13 @@ public class Scoreboard
         schedulerCreated = true;
     }
 
+    /**
+     * Adds scoreboard to the player.
+     *
+     * @param player Player
+     * @param object Scoreboard object
+     * @return Provided scoreboard object
+     */
     @Nullable
     public ScoreboardObject addScoreboard(Player player, ScoreboardObject object) {
         if (object == null)
@@ -63,6 +76,13 @@ public class Scoreboard
         return object;
     }
 
+    /**
+     * Gets player's scoreboard by name.
+     *
+     * @param player Player
+     * @param name   Name
+     * @return Scoreboard object
+     */
     @Nullable
     public ScoreboardObject getScoreboard(Player player, String name) {
         if (!entries.containsKey(player))
@@ -74,6 +94,13 @@ public class Scoreboard
                       .orElse(null);
     }
 
+    /**
+     * Gets player's scoreboard by its logic type.
+     *
+     * @param player     Player
+     * @param logicClass Logic type
+     * @return Scoreboard object
+     */
     @Nullable
     public ScoreboardObject getScoreboard(Player player, Class<? extends ScoreboardLogic> logicClass) {
         if (!entries.containsKey(player))
@@ -91,7 +118,7 @@ public class Scoreboard
 //    }
 
     @EventHandler
-    public void onPlayerQuitEvent(PlayerQuitEvent e) {
+    private void onPlayerQuitEvent(PlayerQuitEvent e) {
         entries.remove(e.getPlayer());
     }
 }

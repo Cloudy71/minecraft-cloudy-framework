@@ -7,9 +7,18 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 
+/**
+ * @author Cloudy
+ */
 @Component
 public class Particles {
 
+    /**
+     * Collects all created particle jobs and merges them into one.
+     *
+     * @param jobs Particle jobs
+     * @return Merged particle job
+     */
     public ParticleJob collection(ParticleJob... jobs) {
         ParticleJob job = new ParticleJob(new ArrayList<>());
         for (ParticleJob particleJob : jobs) {
@@ -18,6 +27,19 @@ public class Particles {
         return job;
     }
 
+    /**
+     * Creates pulse line particle job.
+     *
+     * @param world          World
+     * @param from           From vector
+     * @param to             To vector
+     * @param color          Color
+     * @param size           Size
+     * @param step           Step
+     * @param pulseCount     Pulse count
+     * @param pulseTickDelay Pulse tick delay
+     * @return Particle job
+     */
     public ParticleJob pulseLine(World world, Vector from, Vector to, Color color, float size, float step, int pulseCount, int pulseTickDelay) {
         ParticleJob job = new ParticleJob(new ArrayList<>());
         for (int i = 0; i < pulseCount; ++i) {
@@ -43,10 +65,33 @@ public class Particles {
         return job;
     }
 
+    /**
+     * Creates pulse line particle job.
+     *
+     * @param world          World
+     * @param from           From vector
+     * @param to             To vector
+     * @param color          Color
+     * @param size           Size
+     * @param pulseCount     Pulse count
+     * @param pulseTickDelay Pulse tick delay
+     * @return Particle job
+     */
     public ParticleJob pulseLine(World world, Vector from, Vector to, Color color, float size, int pulseCount, int pulseTickDelay) {
         return pulseLine(world, from, to, color, size, size * .1f, pulseCount, pulseTickDelay);
     }
 
+    /**
+     * Creates pulse line particle job.
+     *
+     * @param world          World
+     * @param from           From vector
+     * @param to             To vector
+     * @param color          Color
+     * @param pulseCount     Pulse count
+     * @param pulseTickDelay Pulse tick delay
+     * @return Particle job
+     */
     public ParticleJob pulseLine(World world, Vector from, Vector to, Color color, int pulseCount, int pulseTickDelay) {
         return pulseLine(world, from, to, color, 1f, pulseCount, pulseTickDelay);
     }

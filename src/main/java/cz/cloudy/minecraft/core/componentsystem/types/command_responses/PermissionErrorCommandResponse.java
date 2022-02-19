@@ -13,6 +13,9 @@ package cz.cloudy.minecraft.core.componentsystem.types.command_responses;
 public class PermissionErrorCommandResponse
         extends ErrorCommandResponse {
 
+    /**
+     * Default constructor
+     */
     public PermissionErrorCommandResponse() {
         super("Insufficient permissions.");
     }

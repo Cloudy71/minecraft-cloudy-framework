@@ -14,33 +14,17 @@ import java.util.Map;
 /**
  * @author Cloudy
  */
-public class MysqlFetchData
+public record MysqlFetchData(String selectQuery, String fromQuery, List<String> joinQuery,
+                             Map<String, String> translationMap)
         implements IFetchData {
-    private final String              selectQuery;
-    private final String              fromQuery;
-    private final List<String>        joinQuery;
-    private final Map<String, String> translationMap;
-
-    public MysqlFetchData(String selectQuery, String fromQuery, List<String> joinQuery, Map<String, String> translationMap) {
-        this.selectQuery = selectQuery;
-        this.fromQuery = fromQuery;
-        this.joinQuery = joinQuery;
-        this.translationMap = translationMap;
-    }
-
-    public String getSelectQuery() {
-        return selectQuery;
-    }
-
-    public String getFromQuery() {
-        return fromQuery;
-    }
-
-    public List<String> getJoinQuery() {
-        return joinQuery;
-    }
-
-    public Map<String, String> getTranslationMap() {
-        return translationMap;
+    /**
+     * Default constructor.
+     *
+     * @param selectQuery    Select query
+     * @param fromQuery      From query
+     * @param joinQuery      Join query
+     * @param translationMap Translation map
+     */
+    public MysqlFetchData {
     }
 }

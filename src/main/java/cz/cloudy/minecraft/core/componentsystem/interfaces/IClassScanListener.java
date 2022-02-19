@@ -10,5 +10,10 @@ package cz.cloudy.minecraft.core.componentsystem.interfaces;
  * @author Cloudy
  */
 public interface IClassScanListener {
+    /**
+     * Is invoked when new component scan occurred.
+     *
+     * @param classes Classes
+     */
     void scan(Class<?>[] classes);
 }

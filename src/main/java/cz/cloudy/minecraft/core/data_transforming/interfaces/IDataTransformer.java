@@ -15,6 +15,11 @@ import java.lang.reflect.Type;
  * @author Cloudy
  */
 public interface IDataTransformer<T0, T1> {
+    /**
+     * The types this transformer processes.
+     *
+     * @return Pair of types
+     */
     default Pair<Class<T0>, Class<T1>> getTypes() {
         Type t0 = ((ParameterizedType) getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
         Type t1 = ((ParameterizedType) getClass().getGenericInterfaces()[0]).getActualTypeArguments()[1];
@@ -23,7 +28,19 @@ public interface IDataTransformer<T0, T1> {
         return new Pair<>(c0, c1);
     }
 
+    /**
+     * Transforms first type value into second type.
+     *
+     * @param value First type value
+     * @return Second type value
+     */
     T1 transform0to1(T0 value);
 
+    /**
+     * Transforms second type value into first type.
+     *
+     * @param value Second type value
+     * @return First type value
+     */
     T0 transform1to0(T1 value);
 }

@@ -26,10 +26,25 @@ public record FieldScan(ClassScan classScan, Field field,
                         MultiIndex multiIndex) {
 
     // ==============================================================
+
+    /**
+     * Returns field's final type.
+     * Final type can differ from implementation due to {@link Transform} annotation.
+     * If this annotation occurs on such field, transforms final type is returned.
+     *
+     * @return Field's final type
+     */
     public Class<?> getDatabaseClass() {
         return ComponentLoader.get(DatabaseEntityMapper.class).getFieldScanDatabaseClass(this);
     }
 
+    /**
+     * Gets value from field and transforms it into database usable type.
+     * Database usable type is considered primitive type like {@link Integer} or {@link String} as well as {@link Transform#value()} final type.
+     *
+     * @param entity Entity
+     * @return Database usable type
+     */
     public Object getDatabaseValue(DatabaseEntity entity) {
         return ComponentLoader.get(DatabaseEntityMapper.class).getFieldScanDatabaseValue(entity, this);
     }

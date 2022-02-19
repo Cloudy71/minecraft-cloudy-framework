@@ -1,4 +1,5 @@
 main: "cz.cloudy.minecraft.core.CoreRunnerPlugin"
-version: "1.0"
+author: "Cloudy"
+version: "1.18.6"
 name: "CorePlugin"
 api-version: "1.18"

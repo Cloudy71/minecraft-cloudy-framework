@@ -15,9 +15,21 @@ import org.bukkit.entity.Player;
  */
 public record CommandData(CommandSender sender, Command command, String[] arguments) {
     // ==================================================
+
+    /**
+     * Checks if command sender is a player
+     *
+     * @return True if command sender is a player
+     */
     public boolean isPlayer() {
         return sender instanceof Player;
     }
+
+    /**
+     * Returns command sender as player.
+     *
+     * @return Command sender as player
+     */
     public Player getPlayer() {
         return (Player) sender;
     }

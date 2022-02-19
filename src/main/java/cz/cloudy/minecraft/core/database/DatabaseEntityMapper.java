@@ -33,14 +33,24 @@ import java.util.stream.Collectors;
 /**
  * @author Cloudy
  */
-@Component
+@Component(wiredFrom = {Database.class, DatabaseCache.class})
 public class DatabaseEntityMapper
         implements IComponent {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseEntityMapper.class);
 
-    protected static final Map<Class<? extends DatabaseEntity>, ClassScan> mappedClasses = new HashMap<>();
-    protected static final Map<Class<? extends DatabaseEntity>, List<FieldScan>> mappedFields = new HashMap<>();
-    protected static final List<Class<? extends DatabaseEntity>> stashedEntities = new ArrayList<>();
+    /**
+     * Class scans of database entities.
+     */
+    protected static final Map<Class<? extends DatabaseEntity>, ClassScan>       mappedClasses   = new HashMap<>();
+    /**
+     * Field scans of database entities.
+     */
+    protected static final Map<Class<? extends DatabaseEntity>, List<FieldScan>> mappedFields    = new HashMap<>();
+    /**
+     * Entities which requires special conditions to be created.
+     * There entities are stashed in case at least one plugin passes there special conditions so these entities could be mapped.
+     */
+    protected static final List<Class<? extends DatabaseEntity>>                 stashedEntities = new ArrayList<>();
 
 //    protected static final com.google.common.collect.Table<Class<? extends DatabaseEntity>, Object, DatabaseEntity> entityTable =
 //            HashBasedTable.create();
@@ -80,18 +90,35 @@ public class DatabaseEntityMapper
         }
     }
 
+    /**
+     * Returns field's final type.
+     * Final type can differ from implementation due to {@link Transform} annotation.
+     * If this annotation occurs on such field, transforms final type is returned.
+     *
+     * @param fieldScan Field scan
+     * @return Field's final type
+     */
     public Class<?> getFieldScanDatabaseClass(FieldScan fieldScan) {
         if (fieldScan.transform() != null)
             return dataTransformer.getUnknownDataTransformer(fieldScan.transform().value()).getTypes().getValue();
         return fieldScan.field().getType();
     }
 
+    /**
+     * Gets value from field and transforms it into database usable type.
+     * Database usable type is considered primitive type like {@link Integer} or {@link String} as well as {@link Transform#value()} final type.
+     *
+     * @param entity    Entity
+     * @param fieldScan Field scan
+     * @return Database usable type
+     */
     public Object getFieldScanDatabaseValue(DatabaseEntity entity, FieldScan fieldScan) {
         Object value = ReflectionUtils.getValueOpt(fieldScan.field(), entity).orElse(null);
         if (value == null)
             return null;
         if (fieldScan.transform() != null)
-            return ((IDataTransformer) dataTransformer.getUnknownDataTransformer(fieldScan.transform().value())).transform0to1(value);
+            return getForwardTransformedValue(fieldScan, value);
+//            return ((IDataTransformer) dataTransformer.getUnknownDataTransformer(fieldScan.transform().value())).transform0to1(value);
         if (fieldScan.foreignKey() != null) {
             DatabaseEntity foreignEntity = (DatabaseEntity) value;
             return getFieldScanDatabaseValue(foreignEntity, getPrimaryKeyFieldScan(foreignEntity.getClass()));
@@ -99,6 +126,14 @@ public class DatabaseEntityMapper
         return value;
     }
 
+    /**
+     * Transforms primitive type values into needed primitive types.
+     * This is used mainly when database field is of {@link Long} type, but database returns {@link Integer}.
+     *
+     * @param value   Value
+     * @param newType Required type
+     * @return Transformed primitive
+     */
     protected Object getPrimitiveTransformedValue(Object value, Class<?> newType) {
         Class<?> currentType = value.getClass();
 
@@ -118,9 +153,9 @@ public class DatabaseEntityMapper
             newType = Boolean.class;
 
         if ((currentType != String.class && currentType != Byte.class && currentType != Short.class && currentType != Integer.class &&
-                currentType != Long.class && currentType != Float.class && currentType != Double.class && currentType != Boolean.class) ||
-                (newType != String.class && newType != Byte.class && newType != Short.class && newType != Integer.class &&
-                        newType != Long.class && newType != Float.class && newType != Double.class && newType != Boolean.class))
+             currentType != Long.class && currentType != Float.class && currentType != Double.class && currentType != Boolean.class) ||
+            (newType != String.class && newType != Byte.class && newType != Short.class && newType != Integer.class &&
+             newType != Long.class && newType != Float.class && newType != Double.class && newType != Boolean.class))
             return value;
 
         if (currentType == String.class) {
@@ -177,7 +212,38 @@ public class DatabaseEntityMapper
         return value;
     }
 
-    protected Object getTransformedValue(FieldScan fieldScan, Object value) {
+    /**
+     * Transforms field into its final type.
+     * Is used only if field has {@link Transform} annotation.
+     *
+     * @param fieldScan Field scan
+     * @param value     Value
+     * @return Transformed value
+     */
+    protected Object getForwardTransformedValue(FieldScan fieldScan, Object value) {
+        if (value == null)
+            return null;
+
+        Class<?> type = fieldScan.field().getType();
+        if (fieldScan.transform() != null) {
+            IDataTransformer transformer = dataTransformer.getUnknownDataTransformer(fieldScan.transform().value());
+            Class<?> requiredType = (Class<?>) transformer.getTypes().getKey();
+            if (value.getClass() == requiredType)
+                value = transformer.transform0to1(value);
+        }
+
+        return value;
+    }
+
+    /**
+     * Transforms field into its base type.
+     * Is used only if field has {@link Transform} annotation.
+     *
+     * @param fieldScan Field scan
+     * @param value     Value
+     * @return Transformed value
+     */
+    protected Object getBackTransformedValue(FieldScan fieldScan, Object value) {
         if (value == null)
             return null;
 
@@ -202,6 +268,12 @@ public class DatabaseEntityMapper
         return value;
     }
 
+    /**
+     * Maps entity fields.
+     *
+     * @param clazz        Type
+     * @param childClasses Child types
+     */
     // TODO: Join scans
     protected void mapEntityFields(Class<? extends DatabaseEntity> clazz, List<Class<? extends DatabaseEntity>> childClasses) {
         childClasses.add(clazz);
@@ -232,8 +304,8 @@ public class DatabaseEntityMapper
 
             for (Class<? extends DatabaseEntity> childClass : childClasses) {
                 if ((mappedFields.containsKey(childClass) &&
-                        mappedFields.get(childClass).stream().anyMatch(fieldScan -> fieldScan.column().value().equals(column.value()))) ||
-                        (primaryKey != null && getPrimaryKeyFieldScan(childClass) != null))
+                     mappedFields.get(childClass).stream().anyMatch(fieldScan -> fieldScan.column().value().equals(column.value()))) ||
+                    (primaryKey != null && getPrimaryKeyFieldScan(childClass) != null))
                     continue;
                 ClassScan classScan = mappedClasses.getOrDefault(childClass, null);
                 FieldScan fieldScan = new FieldScan(
@@ -261,6 +333,11 @@ public class DatabaseEntityMapper
         }
     }
 
+    /**
+     * Maps entity type.
+     *
+     * @param clazz type
+     */
     public void mapEntityClass(Class<? extends DatabaseEntity> clazz) {
         if (mappedClasses.containsKey(clazz))
             return;
@@ -288,21 +365,38 @@ public class DatabaseEntityMapper
             mapEntityClassInternal((Class<? extends DatabaseEntity>) clazz.getSuperclass());
     }
 
-    public List<FieldScan> getFieldScansForEntityClass(Class<? extends DatabaseEntity> clazz) {
+    /**
+     * Gets all field scans for entity type.
+     *
+     * @param clazz Entity type
+     * @return Field scans
+     */
+    public List<FieldScan> getFieldScansForEntityType(Class<? extends DatabaseEntity> clazz) {
         if (!mappedFields.containsKey(clazz))
             return Collections.emptyList();
 
         return new ArrayList<>(mappedFields.get(clazz));
     }
 
-    public ClassScan getClassScanForEntityClass(Class<? extends DatabaseEntity> clazz) {
+    /**
+     * Gets class scan for entity type.
+     *
+     * @param clazz Entity type
+     * @return Class scan
+     */
+    public ClassScan getClassScanForEntityType(Class<? extends DatabaseEntity> clazz) {
         if (!mappedClasses.containsKey(clazz))
             return null;
 
         return mappedClasses.get(clazz);
     }
 
-    public Set<Pair<ClassScan, Set<FieldScan>>> getMappedDatabaseEntityClasses() {
+    /**
+     * Gets all mapped entity types.
+     *
+     * @return All mapped entity types
+     */
+    public Set<Pair<ClassScan, Set<FieldScan>>> getMappedDatabaseEntityTypes() {
         Set<Pair<ClassScan, Set<FieldScan>>> set = new HashSet<>();
         for (ClassScan clazz : mappedClasses.values()) {
             set.add(new Pair<>(clazz, new HashSet<>(mappedFields.get(clazz.clazz()))));
@@ -310,9 +404,14 @@ public class DatabaseEntityMapper
         return set;
     }
 
-    public Set<Pair<ClassScan, Set<FieldScan>>> getMappedUnConstructedDatabaseEntityClasses() {
+    /**
+     * Gets all mapped but database un-constructed entity types.
+     *
+     * @return All mapped un-constructed entity types
+     */
+    public Set<Pair<ClassScan, Set<FieldScan>>> getMappedUnConstructedDatabaseEntityTypes() {
         Set<Pair<ClassScan, Set<FieldScan>>> set = new HashSet<>();
-        for (Pair<ClassScan, Set<FieldScan>> mappedDatabaseEntityClass : getMappedDatabaseEntityClasses()) {
+        for (Pair<ClassScan, Set<FieldScan>> mappedDatabaseEntityClass : getMappedDatabaseEntityTypes()) {
             if (mappedDatabaseEntityClass.getKey().isConstructed())
                 continue;
 
@@ -321,16 +420,32 @@ public class DatabaseEntityMapper
         return set;
     }
 
+    /**
+     * Gets entity type's primary key field scan.
+     *
+     * @param clazz Entity type
+     * @return Primary key field scan or null if not found
+     */
     public FieldScan getPrimaryKeyFieldScan(Class<? extends DatabaseEntity> clazz) {
         if (!mappedFields.containsKey(clazz))
             return null;
         List<FieldScan> scans = mappedFields.get(clazz);
         return scans.stream()
-                .filter(fieldScan -> fieldScan.primaryKey() != null)
-                .findFirst()
-                .orElse(null);
+                    .filter(fieldScan -> fieldScan.primaryKey() != null)
+                    .findFirst()
+                    .orElse(null);
     }
 
+    /**
+     * Maps fetched data from database into newly created entity.
+     *
+     * @param clazz      Entity type
+     * @param data       Entity data
+     * @param dataPrefix Data prefix
+     * @param fetchLevel Fetch level
+     * @param <T>        Entity type generic
+     * @return New entity
+     */
     protected <T extends DatabaseEntity> T mapDataToNewEntity(Class<T> clazz, Map<String, Object> data, String dataPrefix, FetchLevel fetchLevel) {
         T entity;
         try {
@@ -343,7 +458,7 @@ public class DatabaseEntityMapper
         entity.fetchLevel = fetchLevel;
         mapDataToEntity(entity, data, dataPrefix, fetchLevel);
         FieldScan primaryKeyField = getPrimaryKeyFieldScan(clazz);
-        cache.addEntity(entity, ReflectionUtils.getValueOpt(primaryKeyField.field(), entity).orElseThrow());
+        cache.addPrimaryCacheEntity(entity, ReflectionUtils.getValueOpt(primaryKeyField.field(), entity).orElseThrow());
 //        entityTable.put(
 //                clazz,
 //                ReflectionUtils.getValue(primaryKeyField.field(), entity).orElseThrow(),
@@ -352,7 +467,7 @@ public class DatabaseEntityMapper
         // Check for FetchLevel of object
         // To avoid having Primitive fetch level assigned even though entity is fully loaded
         if (fetchLevel == FetchLevel.Primitive) {
-            List<FieldScan> fieldScans = getFieldScansForEntityClass(clazz);
+            List<FieldScan> fieldScans = getFieldScansForEntityType(clazz);
             boolean lazyObjectExists = false;
             for (FieldScan fieldScan : fieldScans) {
                 if (fieldScan.lazy() == null)
@@ -385,12 +500,20 @@ public class DatabaseEntityMapper
         return entity;
     }
 
+    /**
+     * Maps fetched data from database into already created entity.
+     *
+     * @param entity     Entity
+     * @param data       Data
+     * @param dataPrefix Data prefix
+     * @param fetchLevel Fetch level
+     */
     protected void mapDataToEntity(DatabaseEntity entity, Map<String, Object> data, String dataPrefix, FetchLevel fetchLevel) {
-        List<FieldScan> fields = getFieldScansForEntityClass(entity.getClass());
+        List<FieldScan> fields = getFieldScansForEntityType(entity.getClass());
         fields = fields.stream()
-                .sorted((o1, o2) -> o1.primaryKey() != null ? -1
-                        : (o2.primaryKey() != null ? 1 : (o1.lazy() == null ? -1 : (o2.lazy() == null ? 1 : 0))))
-                .collect(Collectors.toList());
+                       .sorted((o1, o2) -> o1.primaryKey() != null ? -1
+                               : (o2.primaryKey() != null ? 1 : (o1.lazy() == null ? -1 : (o2.lazy() == null ? 1 : 0))))
+                       .collect(Collectors.toList());
         // TODO: Go field by field and search for values with correct field key
         // TODO: It's better than filling values by data map, because we could get non primary key attribute for foreign object first
         for (FieldScan field : fields) {
@@ -407,11 +530,11 @@ public class DatabaseEntityMapper
 
             Object dataValue;
             if (foreignObjectClass != null) {
-                Object primaryKeyValue = getTransformedValue(foreignObjectPrimaryKeyField, data.get(columnName));
+                Object primaryKeyValue = getBackTransformedValue(foreignObjectPrimaryKeyField, data.get(columnName));
                 dataValue = null;
                 if (primaryKeyValue != null) {
                     FetchLevel newFetchLevel = field.lazy() == null ? fetchLevel : (fetchLevel == FetchLevel.Full ? FetchLevel.Primitive : FetchLevel.None);
-                    if ((dataValue = cache.getEntity(foreignObjectClass, primaryKeyValue)) != null) {
+                    if ((dataValue = cache.getPrimaryCacheEntity(foreignObjectClass, primaryKeyValue)) != null) {
                         mapDataToEntity(
                                 (DatabaseEntity) dataValue,
                                 data,
@@ -430,14 +553,14 @@ public class DatabaseEntityMapper
                 dataValue = data.get(columnName);
             }
 
-            ReflectionUtils.setValue(field.field(), entity, getTransformedValue(field, dataValue));
+            ReflectionUtils.setValue(field.field(), entity, getBackTransformedValue(field, dataValue));
         }
 
     }
 
     private <T extends DatabaseEntity> T getEntityFromCache(Class<T> clazz, Object primaryKey, FetchLevel fetchLevel) {
         T entity;
-        if ((entity = cache.getEntity(clazz, primaryKey)) == null)
+        if ((entity = cache.getPrimaryCacheEntity(clazz, primaryKey)) == null)
             return null;
 
         Preconditions.checkNotNull(entity);
@@ -446,6 +569,15 @@ public class DatabaseEntityMapper
         return entity;
     }
 
+    /**
+     * Finds entity by its primary key value.
+     *
+     * @param clazz      Entity type
+     * @param primaryKey Primary key value
+     * @param fetchLevel Fetch level
+     * @param <T>        Entity type generic
+     * @return Fetched entity or null if not found
+     */
     protected <T extends DatabaseEntity> T findEntity(Class<T> clazz, Object primaryKey, FetchLevel fetchLevel) {
         // TODO: Find entity and if fetchLevel is lower than selected, use fetchEntity
         T cachedEntity = getEntityFromCache(clazz, primaryKey, fetchLevel);
@@ -459,6 +591,16 @@ public class DatabaseEntityMapper
         return mapDataToNewEntity(clazz, result.getDataMap(0), "", fetchLevel);
     }
 
+    /**
+     * Finds entity by specified conditions.
+     *
+     * @param clazz      Entity type
+     * @param conditions Conditions
+     * @param parameters Parameters
+     * @param fetchLevel Fetch level
+     * @param <T>        Entity type generic
+     * @return Fetched entity or null if not found
+     */
     protected <T extends DatabaseEntity> T findEntity(Class<T> clazz, String conditions, Map<String, Object> parameters, FetchLevel fetchLevel) {
         QueryResult result = database.getProcessor().findEntityData(clazz, conditions, parameters, fetchLevel, 0, 1);
         if (result == null || result.getRowCount() == 0)
@@ -468,9 +610,9 @@ public class DatabaseEntityMapper
         Preconditions.checkNotNull(primaryKeyField);
         Map<String, Object> data = result.getDataMap(0);
         Preconditions.checkState(data.containsKey(primaryKeyField.column().value()));
-        Object primaryKeyValue = getTransformedValue(primaryKeyField, data.get(primaryKeyField.column().value()));
+        Object primaryKeyValue = getBackTransformedValue(primaryKeyField, data.get(primaryKeyField.column().value()));
         DatabaseEntity entity;
-        if ((entity = cache.getEntity(clazz, primaryKeyValue)) != null) {
+        if ((entity = cache.getPrimaryCacheEntity(clazz, primaryKeyValue)) != null) {
             if (entity.fetchLevel.isLowerThan(fetchLevel))
                 mapDataToEntity(entity, data, "", fetchLevel);
             return (T) entity;
@@ -479,6 +621,16 @@ public class DatabaseEntityMapper
         return mapDataToNewEntity(clazz, data, "", fetchLevel);
     }
 
+    /**
+     * Finds all entities by specified conditions.
+     *
+     * @param clazz      Entity type
+     * @param conditions Conditions
+     * @param parameters Parameters
+     * @param fetchLevel Fetch level
+     * @param <T>        Entity type generic
+     * @return Set of fetched entities or null if error occurred
+     */
     protected <T extends DatabaseEntity> Set<T> findEntities(Class<T> clazz, String conditions, Map<String, Object> parameters, FetchLevel fetchLevel) {
         Set<T> allEntities;
         if (conditions == null && parameters == null && (allEntities = cache.getAllCacheEntities(clazz)) != null) {
@@ -494,9 +646,9 @@ public class DatabaseEntityMapper
         List<T> entities = new ArrayList<>();
         for (Map<String, Object> map : result.getDataMapTable()) {
             Preconditions.checkState(map.containsKey(primaryKeyField.column().value()));
-            Object primaryKeyValue = getTransformedValue(primaryKeyField, map.get(primaryKeyField.column().value()));
+            Object primaryKeyValue = getBackTransformedValue(primaryKeyField, map.get(primaryKeyField.column().value()));
             DatabaseEntity entity;
-            if ((entity = cache.getEntity(clazz, primaryKeyValue)) != null) {
+            if ((entity = cache.getPrimaryCacheEntity(clazz, primaryKeyValue)) != null) {
                 if (entity.fetchLevel.isLowerThan(fetchLevel))
                     mapDataToEntity(entity, map, "", fetchLevel);
                 entities.add((T) entity);
@@ -511,6 +663,44 @@ public class DatabaseEntityMapper
         return dataSet;
     }
 
+    /**
+     * Deletes entity by its primary key value
+     *
+     * @param type       Entity type
+     * @param primaryKey Primary key value
+     */
+    protected void deleteEntity(Class<? extends DatabaseEntity> type, Object primaryKey) {
+        DatabaseEntity entity;
+        if ((entity = cache.getPrimaryCacheEntity(type, primaryKey)) != null) {
+            entity.delete();
+            return;
+        }
+
+        database.getProcessor().deleteEntity(type, primaryKey);
+        cache.removePrimaryCacheEntity(type, primaryKey);
+        DatabaseAspect.clearJoinsFor(type, null);
+    }
+
+    /**
+     * Deletes entities by specified conditions.
+     *
+     * @param type       Entity type
+     * @param conditions Conditions
+     * @param parameters Parameters
+     */
+    protected void deleteEntities(Class<? extends DatabaseEntity> type, String conditions, Map<String, Object> parameters) {
+        database.getProcessor().deleteEntities(type, conditions, parameters);
+        cache.clearPrimaryCache(type);
+        cache.clearAllCacheEntities(type);
+        DatabaseAspect.clearJoinsFor(type, null);
+    }
+
+    /**
+     * Loads entity into new fetch level.
+     *
+     * @param entity     Entity
+     * @param fetchLevel Fetch level
+     */
     protected void loadEntity(DatabaseEntity entity, FetchLevel fetchLevel) {
         if (entity.fetchLevel == fetchLevel || entity.fetchLevel.isHigherThan(fetchLevel))
             return;
@@ -523,6 +713,13 @@ public class DatabaseEntityMapper
         entity.fetchLevel = fetchLevel;
     }
 
+    /**
+     * Saves entity.
+     * If it's not replicated, it's inserted into database.
+     * Otherwise an update is executed.
+     *
+     * @param entity Entity
+     */
     protected void saveEntity(DatabaseEntity entity) {
         if (entity.replicated) {
             database.getProcessor().saveEntityExisting(entity);
@@ -531,23 +728,29 @@ public class DatabaseEntityMapper
 
         Object primaryKey = database.getProcessor().saveEntityNew(entity);
         FieldScan primaryKeyFieldScan = getPrimaryKeyFieldScan(entity.getClass());
-        Object primaryKeyValue = getTransformedValue(primaryKeyFieldScan, primaryKey);
+        Object primaryKeyValue = getBackTransformedValue(primaryKeyFieldScan, primaryKey);
         ReflectionUtils.setValue(primaryKeyFieldScan.field(), entity, primaryKeyValue);
         entity.replicated = true;
-        cache.addEntity(entity, primaryKeyValue);
+        cache.addPrimaryCacheEntity(entity, primaryKeyValue);
         cache.clearAllCacheEntities(entity.getClass());
         DatabaseAspect.clearJoinsFor(entity.getClass(), null);
     }
 
+    /**
+     * Deletes specific entity.
+     *
+     * @param entity Entity
+     */
     protected void deleteEntity(DatabaseEntity entity) {
         if (!entity.replicated)
             return;
 
         FieldScan primaryKeyFieldScan = getPrimaryKeyFieldScan(entity.getClass());
         Object primaryKeyValue = ReflectionUtils.getValueOpt(primaryKeyFieldScan.field(), entity).orElseThrow();
-        cache.removeEntity(entity, primaryKeyValue);
+        cache.removePrimaryCacheEntity(entity.getClass(), primaryKeyValue);
         database.getProcessor().deleteEntity(entity);
         cache.clearAllCacheEntities(entity.getClass());
         DatabaseAspect.clearJoinsFor(entity.getClass(), entity);
+        entity.replicated = false;
     }
 }

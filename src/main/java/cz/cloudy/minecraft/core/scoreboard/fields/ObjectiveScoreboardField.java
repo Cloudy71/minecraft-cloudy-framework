@@ -16,10 +16,25 @@ import org.bukkit.scoreboard.Objective;
  */
 public class ObjectiveScoreboardField
         extends ScoreboardField {
+    /**
+     * Name.
+     */
     protected String    name;
+    /**
+     * Display text.
+     */
     protected String    displayText;
+    /**
+     * Objective.
+     */
     protected Objective objective;
 
+    /**
+     * Default constructor.
+     *
+     * @param name        Name
+     * @param displayText Display text
+     */
     public ObjectiveScoreboardField(String name, String displayText) {
         this.name = name;
         this.displayText = displayText;
@@ -31,13 +46,13 @@ public class ObjectiveScoreboardField
 //                                                                         Component.text(scoreboardObject.parse(
 //                                                                                 displayText)/*, Style.style(TextDecoration.OBFUSCATED)*/));
         objective = getScoreboard(scoreboardObject).registerNewObjective(name, "dummy",
-                                                                         scoreboardObject.parse(displayText));
+                                                                         scoreboardObject.transform(displayText));
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
     }
 
     @Override
     protected void updateField(ScoreboardObject scoreboardObject) {
 //        objective.displayName(Component.text(scoreboardObject.parse(displayText)/*, Style.style(TextDecoration.OBFUSCATED)*/));
-        objective.setDisplayName(scoreboardObject.parse(displayText)/*, Style.style(TextDecoration.OBFUSCATED)*/);
+        objective.setDisplayName(scoreboardObject.transform(displayText)/*, Style.style(TextDecoration.OBFUSCATED)*/);
     }
 }

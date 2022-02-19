@@ -15,9 +15,19 @@ import org.bukkit.scoreboard.Team;
  */
 public class TeamScoreboardField
         extends ScoreboardField {
+    /**
+     * Name.
+     */
     protected String name;
+    /**
+     * Team.
+     */
     protected Team   team;
 
+    /**
+     * Default constructor.
+     * @param name Name
+     */
     public TeamScoreboardField(String name) {
         this.name = name;
     }

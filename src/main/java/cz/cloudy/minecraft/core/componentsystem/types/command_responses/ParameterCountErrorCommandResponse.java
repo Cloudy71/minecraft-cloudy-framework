@@ -11,6 +11,11 @@ package cz.cloudy.minecraft.core.componentsystem.types.command_responses;
  */
 public class ParameterCountErrorCommandResponse
         extends ErrorCommandResponse {
+    /**
+     * Default constructor
+     *
+     * @param argumentCount Argument count
+     */
     public ParameterCountErrorCommandResponse(int argumentCount) {
         super("Wrong parameter count. " + argumentCount + " is required.");
     }

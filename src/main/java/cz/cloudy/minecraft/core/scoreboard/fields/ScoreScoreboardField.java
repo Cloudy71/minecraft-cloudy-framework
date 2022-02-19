@@ -18,9 +18,20 @@ import java.util.Comparator;
  */
 public class ScoreScoreboardField
         extends ScoreboardField {
+    /**
+     * Text.
+     */
     protected String text;
+    /**
+     * Score.
+     */
     protected Score  score;
 
+    /**
+     * Default constructor.
+     *
+     * @param text Text
+     */
     public ScoreScoreboardField(String text) {
         this.text = text;
     }
@@ -35,7 +46,7 @@ public class ScoreScoreboardField
         if (objective == null)
             return;
 
-        score = objective.objective.getScore(scoreboardObject.parse(text));
+        score = objective.objective.getScore(scoreboardObject.transform(text));
         score.setScore((int) getFields(scoreboardObject).stream()
                                                         .filter(field -> field instanceof ScoreScoreboardField s && !s.created)
                                                         .count() - 1);
@@ -46,7 +57,7 @@ public class ScoreScoreboardField
         int num = score.getScore();
         Objective objective = score.getObjective();
         score.resetScore();
-        score = objective.getScore(scoreboardObject.parse(text));
+        score = objective.getScore(scoreboardObject.transform(text));
         score.setScore(num);
     }
 }

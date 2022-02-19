@@ -6,8 +6,6 @@
 
 package cz.cloudy.minecraft.core.database;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import cz.cloudy.minecraft.core.componentsystem.ReflectionUtils;
 import cz.cloudy.minecraft.core.componentsystem.annotations.Component;
 import org.jetbrains.annotations.NotNull;
@@ -19,25 +17,46 @@ import java.util.*;
 /**
  * @author Cloudy
  */
-@Component
+@Component(wiredFrom = {Database.class, DatabaseEntityMapper.class})
 public class DatabaseCache {
     private static final Map<Class<? extends DatabaseEntity>, Map<Object, DatabaseEntity>> primaryCache =
             new HashMap<>();
-    private static final Map<Class<? extends DatabaseEntity>, Set<DatabaseEntity>> allCache =
+    private static final Map<Class<? extends DatabaseEntity>, Set<DatabaseEntity>>         allCache     =
             new HashMap<>();
     //    private static final Map<Class<? extends DatabaseEntity>, Map<Object, Map<Method, Object>>> joinCache =
 //            new HashMap<>();  // TODO: Implement join cache including cache clear if value is Collection
-    private static final Map<Method, Map<Object, Object>> joinCache = new HashMap<>(); // Method -> PrimaryValue -> Object
+    private static final Map<Method, Map<Object, Object>>                                  joinCache    = new HashMap<>(); // Method -> PrimaryValue -> Object
 
     @Component
     private DatabaseEntityMapper entityMapper;
 
-    protected void addCacheForEntityType(Class<? extends DatabaseEntity> type) {
-        primaryCache.put(type, new HashMap<>());
-//        primaryCache.put(type, CacheBuilder.newBuilder().build());
+    /**
+     * Clears all database caches
+     *
+     * @since 1.18.5
+     */
+    public void clear() {
+        primaryCache.clear();
+        allCache.clear();
+        joinCache.clear();
     }
 
-    protected void addEntity(@NotNull DatabaseEntity entity, Object primaryValue) {
+    /**
+     * Creates cache for entity type
+     *
+     * @param type Entity type
+     */
+    protected void addCacheForEntityType(Class<? extends DatabaseEntity> type) {
+        primaryCache.put(type, new HashMap<>());
+    }
+
+    /**
+     * Maps entity by its primary key value.
+     *
+     * @param entity       Entity
+     * @param primaryValue Primary key value
+     */
+    protected void addPrimaryCacheEntity(@NotNull DatabaseEntity entity, Object primaryValue) {
         if (primaryValue == null)
             return;
         Map<Object, DatabaseEntity> map = primaryCache.get(entity.getClass());
@@ -46,8 +65,16 @@ public class DatabaseCache {
         map.put(primaryValue, entity);
     }
 
+    /**
+     * Gets entity by its primary key value.
+     *
+     * @param type         Entity type
+     * @param primaryValue Primary key value
+     * @param <T>          Entity type generic
+     * @return Entity or null if none found
+     */
     @Nullable
-    protected <T> T getEntity(@NotNull Class<T> type, Object primaryValue) {
+    protected <T extends DatabaseEntity> T getPrimaryCacheEntity(@NotNull Class<T> type, Object primaryValue) {
         if (primaryValue == null)
             return null;
         Map<Object, DatabaseEntity> map = primaryCache.get(type);
@@ -56,43 +83,97 @@ public class DatabaseCache {
         return (T) map.get(primaryValue);
     }
 
-    protected void removeEntity(@NotNull DatabaseEntity entity, Object primaryValue) {
+    /**
+     * Removes entity by its primary key value.
+     *
+     * @param entity       Entity type
+     * @param primaryValue Primary key value
+     */
+    protected void removePrimaryCacheEntity(Class<? extends DatabaseEntity> entity, Object primaryValue) {
         if (primaryValue == null)
             return;
-        Map<Object, DatabaseEntity> map = primaryCache.get(entity.getClass());
+        Map<Object, DatabaseEntity> map = primaryCache.get(entity);
         if (map == null)
             return;
         map.remove(primaryValue);
     }
 
+    /**
+     * Clears primary key cache by entity type.
+     *
+     * @param type Entity type
+     */
+    protected void clearPrimaryCache(@NotNull Class<? extends DatabaseEntity> type) {
+        primaryCache.remove(type);
+    }
+
+    /**
+     * Adds all cache entities.
+     * Is used when fetching all entity type entities.
+     *
+     * @param type     Entity type
+     * @param entities Entities
+     */
     protected void addAllCacheEntities(Class<? extends DatabaseEntity> type, @NotNull Set<DatabaseEntity> entities) {
         allCache.put(type, entities);
     }
 
+    /**
+     * Gets all cache entities.
+     *
+     * @param type Entity type
+     * @param <T>  Entity type generic
+     * @return Entity set or null if never fetched
+     */
     @Nullable
     protected <T> Set<T> getAllCacheEntities(@NotNull Class<T> type) {
         return (Set<T>) allCache.get(type);
     }
 
+    /**
+     * Clears all entity cache entities.
+     *
+     * @param type Entity type
+     */
     protected void clearAllCacheEntities(Class<? extends DatabaseEntity> type) {
         allCache.remove(type);
     }
 
+    /**
+     * Gets primary key value from entity.
+     *
+     * @param entity Entity
+     * @return Entity's primary key value
+     */
     private Object getPrimaryValue(@NotNull DatabaseEntity entity) {
         return ReflectionUtils.getValueOpt(entityMapper.getPrimaryKeyFieldScan(entity.getClass()).field(), entity).orElse(null);
     }
 
+    /**
+     * Adds join cache.
+     *
+     * @param entity Entity
+     * @param method Method
+     * @param value  Value
+     */
     protected void addJoinCache(@NotNull DatabaseEntity entity, Method method, Object value) {
         Object primaryValue = getPrimaryValue(entity);
         if (primaryValue == null)
             return;
         joinCache.computeIfAbsent(method, m -> new HashMap<>())
-                .computeIfAbsent(primaryValue, o -> value);
+                 .computeIfAbsent(primaryValue, o -> value);
 //        joinCache.computeIfAbsent(entity.getClass(), c -> new HashMap<>())
 //                .computeIfAbsent(primaryValue, o -> new HashMap<>())
 //                .computeIfAbsent(method, m -> value);
     }
 
+    /**
+     * Gets join cache.
+     *
+     * @param entity Entity
+     * @param method Method
+     * @return Join cache object
+     */
     protected Object getJoinCache(@NotNull DatabaseEntity entity, Method method) {
         Map<Object, Object> primaryValueMap = joinCache.get(method);
         if (primaryValueMap == null)
@@ -113,6 +194,12 @@ public class DatabaseCache {
 //        return methodMap.get(method);
     }
 
+    /**
+     * Clears join cache.
+     *
+     * @param method          Method
+     * @param comparingEntity Comparing entity
+     */
     protected void clearJoinCache(Method method, @NotNull DatabaseEntity comparingEntity) {
         Map<Object, Object> primaryValueMap = joinCache.get(method);
         if (primaryValueMap == null)
@@ -142,6 +229,11 @@ public class DatabaseCache {
 //        methodMap.remove(method);
     }
 
+    /**
+     * Clears all method's join cache.
+     *
+     * @param method Method
+     */
     protected void clearJoinCacheMethodAll(Method method) {
         joinCache.remove(method);
 //        Map<Object, Map<Method, Object>> primaryValueMap = joinCache.get(type);

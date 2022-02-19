@@ -1,7 +1,7 @@
 /*
   User: Cloudy
-  Date: 20/01/2022
-  Time: 23:44
+  Date: 19/02/2022
+  Time: 13:37
 */
 
 package cz.cloudy.minecraft.core.componentsystem.annotations;
@@ -13,14 +13,9 @@ import java.lang.annotation.Target;
 
 /**
  * @author Cloudy
+ * @since 1.18.6
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Cron {
-    /**
-     * Cron expression
-     *
-     * @return String
-     */
-    String value();
+@Target({ElementType.METHOD})
+public @interface Benchmarked {
 }

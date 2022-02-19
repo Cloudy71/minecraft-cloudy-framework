@@ -15,7 +15,17 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Repeatable(ComponentScans.class)
 public @interface ComponentScan {
+    /**
+     * Name of the package
+     *
+     * @return String
+     */
     String value() default "";
 
+    /**
+     * Classes from which component scan will be invoked.
+     *
+     * @return Class array
+     */
     Class<?>[] classes() default {};
 }

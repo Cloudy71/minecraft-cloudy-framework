@@ -29,10 +29,22 @@ public enum FetchLevel {
         this.byteValue = byteValue;
     }
 
+    /**
+     * Checks if this fetch level is higher than provided one.
+     *
+     * @param fetchLevel Fetch level
+     * @return True if this fetch level is higher than provided one
+     */
     public boolean isHigherThan(FetchLevel fetchLevel) {
         return byteValue > fetchLevel.byteValue;
     }
 
+    /**
+     * Checks if this fetch level is lower than provided one.
+     *
+     * @param fetchLevel Fetch level
+     * @return True if this fetch level is lower than provided one
+     */
     public boolean isLowerThan(FetchLevel fetchLevel) {
         return byteValue < fetchLevel.byteValue;
     }

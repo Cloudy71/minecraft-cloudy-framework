@@ -16,6 +16,14 @@ import org.bukkit.map.MapView;
 @Component
 public class MapCanvas {
     // TODO: Move to cz.cloudy.minecraft.core.maps.MapController
+
+    /**
+     * Sets renderer for map view.
+     *
+     * @param mapView  Map view
+     * @param renderer Renderer
+     * @deprecated TODO: Create better component.
+     */
     @Deprecated
     public void setRenderer(MapView mapView, MapRenderer renderer) {
         mapView.setScale(MapView.Scale.CLOSEST);

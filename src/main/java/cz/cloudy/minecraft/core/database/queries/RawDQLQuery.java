@@ -17,10 +17,18 @@ public class RawDQLQuery
 
     private String queryString;
 
+    /**
+     * Default constructor.
+     */
     public RawDQLQuery() {
         super(QueryType.RawDQL);
     }
 
+    /**
+     * Setter for query string.
+     *
+     * @param queryString Query string
+     */
     public void setQueryString(String queryString) {
         this.queryString = queryString;
     }

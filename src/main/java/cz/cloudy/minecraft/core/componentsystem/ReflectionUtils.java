@@ -21,6 +21,12 @@ import java.util.Optional;
 public class ReflectionUtils {
     private static final Logger logger = LoggerFactory.getLogger(ReflectionUtils.class);
 
+    /**
+     * Gets all fields of class.
+     *
+     * @param clazz Class
+     * @return Field list
+     */
     public static List<Field> getAllClassFields(Class<?> clazz) {
         List<Field> fields = new ArrayList<>(Arrays.stream(clazz.getDeclaredFields()).toList());
         if (clazz.getSuperclass() != Object.class)
@@ -28,6 +34,13 @@ public class ReflectionUtils {
         return fields;
     }
 
+    /**
+     * Creates optional object of field's value.
+     *
+     * @param field Field
+     * @param obj   Object
+     * @return Optional object
+     */
     public static Optional<Object> getValueOpt(Field field, Object obj) {
         field.setAccessible(true);
         Object value;
@@ -41,6 +54,13 @@ public class ReflectionUtils {
         return Optional.ofNullable(value);
     }
 
+    /**
+     * Sets value to the field.
+     *
+     * @param field Field
+     * @param obj   Object
+     * @param value Value
+     */
     public static void setValue(Field field, Object obj, Object value) {
         field.setAccessible(true);
         try {
@@ -51,6 +71,15 @@ public class ReflectionUtils {
         field.setAccessible(false);
     }
 
+    /**
+     * Creates new instance of provided type.
+     *
+     * @param clazz             Type
+     * @param constructorTypes  Constructor types
+     * @param constructorValues Constructor values
+     * @param <T>               Type generic
+     * @return New instance
+     */
     public static <T> T newInstance(Class<T> clazz, Class<?>[] constructorTypes, Object[] constructorValues) {
         try {
             Constructor<T> constructor = clazz.getConstructor(constructorTypes);
@@ -61,10 +90,25 @@ public class ReflectionUtils {
         return null;
     }
 
+    /**
+     * Creates new instance of provided type.
+     *
+     * @param clazz Type
+     * @param <T>   Type generic
+     * @return New instance
+     */
     public static <T> T newInstance(Class<T> clazz) {
         return newInstance(clazz, new Class[0], new Object[0]);
     }
 
+    /**
+     * Invokes method with parameters.
+     *
+     * @param method     Method
+     * @param object     Object
+     * @param parameters Parameters
+     * @return Return value
+     */
     public static Object invoke(Method method, Object object, Object... parameters) {
         method.setAccessible(true);
         try {

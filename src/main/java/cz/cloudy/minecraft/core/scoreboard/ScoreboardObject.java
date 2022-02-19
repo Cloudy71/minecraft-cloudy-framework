@@ -20,17 +20,41 @@ import java.util.regex.Pattern;
  * @author Cloudy
  */
 public class ScoreboardObject {
+    /**
+     * Name.
+     */
     protected String                name;
+    /**
+     * Logic.
+     */
     protected ScoreboardLogic       logic;
+    /**
+     * Player.
+     */
     protected Player                player;
+    /**
+     * Scoreboard.
+     */
     protected Scoreboard            scoreboard;
+    /**
+     * Fields.
+     */
     protected List<ScoreboardField> fields;
+    /**
+     * Created.
+     */
     protected boolean               created;
 
     private Pattern      parsePattern;
     private boolean      firstUpdate    = true;
     private List<String> cachedDataList = null;
 
+    /**
+     * Default constructor.
+     *
+     * @param name  Name
+     * @param logic Logic
+     */
     public ScoreboardObject(String name, ScoreboardLogic logic) {
         this.parsePattern = Pattern.compile("\\{(\\d+)}");
         this.fields = new ArrayList<>();
@@ -43,18 +67,36 @@ public class ScoreboardObject {
         }
     }
 
+    /**
+     * Default constructor.
+     *
+     * @param logic Logic
+     */
     public ScoreboardObject(ScoreboardLogic logic) {
         this(null, logic);
     }
 
+    /**
+     * Default constructor.
+     *
+     * @param name Name
+     */
     public ScoreboardObject(String name) {
         this(name, null);
     }
 
+    /**
+     * Default constructor.
+     */
     public ScoreboardObject() {
         this(null, null);
     }
 
+    /**
+     * Creates new scoreboard for the player.
+     *
+     * @param player Player
+     */
     protected void create(Player player) {
         Preconditions.checkState(scoreboard == null, "Scoreboard is already created");
         if (logic != null)
@@ -65,6 +107,9 @@ public class ScoreboardObject {
         created = true;
     }
 
+    /**
+     * Updates current scoreboard.
+     */
     public void update() {
         if (logic == null || !logic.checkUpdate())
             return;
@@ -73,6 +118,9 @@ public class ScoreboardObject {
         updateFields();
     }
 
+    /**
+     * Creates fields.
+     */
     protected void createFields() {
         Preconditions.checkNotNull(scoreboard, "Scoreboard is not created");
         for (ScoreboardField field : fields) {
@@ -80,12 +128,21 @@ public class ScoreboardObject {
         }
     }
 
+    /**
+     * Updates fields.
+     */
     protected void updateFields() {
         for (ScoreboardField field : fields) {
             field.updateField(this);
         }
     }
 
+    /**
+     * Adds field to the scoreboard.
+     *
+     * @param field Field
+     * @return Self
+     */
     public ScoreboardObject add(ScoreboardField field) {
         field.index = fields.size();
         fields.add(field);
@@ -94,7 +151,13 @@ public class ScoreboardObject {
         return this;
     }
 
-    public String parse(String text) {
+    /**
+     * Transforms text and inserts data from data list.
+     *
+     * @param text Text
+     * @return Transformed text
+     */
+    public String transform(String text) {
         Matcher matcher = parsePattern.matcher(text);
         while (matcher.find()) {
             int num = Integer.parseInt(matcher.group(1));
@@ -109,6 +172,11 @@ public class ScoreboardObject {
 //
 //    protected abstract void updateScoreboard();
 
+    /**
+     * Is scoreboard created flag.
+     *
+     * @return Created flag
+     */
     public boolean isCreated() {
         return created;
     }

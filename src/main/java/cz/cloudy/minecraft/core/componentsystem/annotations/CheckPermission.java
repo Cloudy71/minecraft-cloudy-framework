@@ -15,7 +15,14 @@ import java.lang.annotation.*;
 @Target({ElementType.METHOD})
 @Repeatable(CheckPermissions.class)
 public @interface CheckPermission {
+    /**
+     * Constant for Operator
+     */
     String OP = "OP";
 
+    /**
+     * Permission name
+     * @return String
+     */
     String value(); // Permission name
 }

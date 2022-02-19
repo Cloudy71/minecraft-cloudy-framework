@@ -16,12 +16,26 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.*;
 
+/**
+ * @author Cloudy
+ */
 @Aspect
 public class DatabaseAspect {
+
     private static final Logger logger = LoggerFactory.getLogger(DatabaseAspect.class);
 
+    /**
+     * Cached method values by entity types.
+     */
     protected static final Map<Class<? extends DatabaseEntity>, List<Method>> cachingMethods = new HashMap<>();
 
+    /**
+     * Clears all joins for entity type.
+     * Behavior is different when singleEntity parameter is not null: removes such entity from all join caches.
+     *
+     * @param type         Entity type
+     * @param singleEntity Single entity
+     */
     protected static void clearJoinsFor(Class<? extends DatabaseEntity> type, @Nullable DatabaseEntity singleEntity) {
         if (!cachingMethods.containsKey(type))
             return;
@@ -36,18 +50,27 @@ public class DatabaseAspect {
         }
     }
 
+    /**
+     * -
+     *
+     * @param joinPoint -
+     * @return -
+     * @throws Throwable -
+     */
     @Around("@annotation(cz.cloudy.minecraft.core.database.annotation.Join)")
     public Object aroundJoin(ProceedingJoinPoint joinPoint) throws Throwable {
         if (!(joinPoint.getTarget() instanceof DatabaseEntity databaseEntity))
             throw new RuntimeException("Join annotation can be used only inside DatabaseEntity class.");
+        if (!databaseEntity.isReplicated())
+            throw new RuntimeException("This entity is not replicated.");
         if (databaseEntity.fetchLevel.isLowerThan(FetchLevel.Primitive))
             databaseEntity.load(FetchLevel.Primitive);
 
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-        Object thisObject = joinPoint.getTarget();
         Join join = methodSignature.getMethod().getAnnotation(Join.class);
 //        logger.info("JOIN_CACHE: {}, {}", thisObject, join.table().getSimpleName());
 
+        // TODO: Check if entities are replicated
         Object value = joinPoint.proceed();
         if (value != null)
             return value;
@@ -64,7 +87,7 @@ public class DatabaseAspect {
             methodList.add(methodSignature.getMethod());
 
         Map<String, Object> parameterMap = new HashMap<>();
-        for (FieldScan fieldScan : entityMapper.getFieldScansForEntityClass(databaseEntity.getClass())) {
+        for (FieldScan fieldScan : entityMapper.getFieldScansForEntityType(databaseEntity.getClass())) {
             if (fieldScan.foreignKey() != null) // TODO: Implement foreign key usage
                 continue;
 
@@ -89,7 +112,7 @@ public class DatabaseAspect {
                     join.table(),
                     join.where(),
                     parameterMap,
-                    FetchLevel.Primitive
+                    join.fetchLevel()
             );
         }
 //        logger.info("JOIN_FETCH: {}, {}", methodSignature.getReturnType().getSimpleName(), cacheObject);

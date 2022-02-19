@@ -17,5 +17,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface CheckConfiguration {
+    /**
+     * Configuration condition
+     *
+     * @return String
+     */
     String value();
 }

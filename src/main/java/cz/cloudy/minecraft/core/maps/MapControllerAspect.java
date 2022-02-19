@@ -36,6 +36,10 @@ public class MapControllerAspect {
     private void pointcutItemFrameSetItem() {
     }
 
+    /**
+     * -
+     * @param joinPoint -
+     */
     @Before("pointcutItemFrameSetItem()")
     public void beforeItemFrameSetItem(JoinPoint joinPoint) {
 //        logger.info("BEFORE ITEM_FRAME_SET_ITEM: {}", joinPoint.getArgs()[0]);

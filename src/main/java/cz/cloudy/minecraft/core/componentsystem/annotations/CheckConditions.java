@@ -6,7 +6,10 @@
 
 package cz.cloudy.minecraft.core.componentsystem.annotations;
 
-import java.lang.annotation.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author Cloudy
@@ -14,5 +17,10 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface CheckConditions {
+    /**
+     * Conditions
+     *
+     * @return Condition array
+     */
     CheckCondition[] value();
 }

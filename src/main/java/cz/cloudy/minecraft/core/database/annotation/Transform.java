@@ -19,5 +19,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Transform {
+    /**
+     * Transformer class.
+     * @return Class
+     */
     Class<? extends IDataTransformer<?, ?>> value();
 }

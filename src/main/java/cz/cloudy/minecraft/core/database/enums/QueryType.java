@@ -10,5 +10,28 @@ package cz.cloudy.minecraft.core.database.enums;
  * @author Cloudy
  */
 public enum QueryType {
-    RawDQL, RawDMLOrDDL, Select, Insert, Update, Delete
+    /**
+     * Raw DQL.
+     */
+    RawDQL,
+    /**
+     * Raw DML or DDL.
+     */
+    RawDMLOrDDL,
+    /**
+     * Select.
+     */
+    Select,
+    /**
+     * Insert.
+     */
+    Insert,
+    /**
+     * Update.
+     */
+    Update,
+    /**
+     * Delete.
+     */
+    Delete
 }

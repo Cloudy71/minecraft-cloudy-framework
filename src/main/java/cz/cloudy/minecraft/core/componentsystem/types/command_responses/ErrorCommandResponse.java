@@ -18,6 +18,11 @@ public class ErrorCommandResponse
         implements ICommandResponseResolvable {
     private final String message;
 
+    /**
+     * Default constructor
+     *
+     * @param message Message
+     */
     public ErrorCommandResponse(String message) {
         this.message = message;
     }

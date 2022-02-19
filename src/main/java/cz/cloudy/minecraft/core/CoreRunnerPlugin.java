@@ -18,11 +18,14 @@ public final class CoreRunnerPlugin
         extends CorePlugin {
     private static final Logger logger = LoggerFactory.getLogger(CoreRunnerPlugin.class);
 
+    /**
+     * Core runner plugin singleton
+     */
     public static CoreRunnerPlugin singleton;
 
     @Override
     public void onStart() {
-        singleton=this;
+        singleton = this;
     }
 
     @Override

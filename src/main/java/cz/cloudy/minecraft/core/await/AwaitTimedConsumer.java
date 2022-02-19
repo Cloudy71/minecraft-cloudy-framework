@@ -1,15 +1,20 @@
 package cz.cloudy.minecraft.core.await;
 
 import cz.cloudy.minecraft.core.CoreRunnerPlugin;
-import cz.cloudy.minecraft.core.LoggerFactory;
 import org.bukkit.Bukkit;
-import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public interface AwaitTimedConsumer<T> extends AwaitConsumer<T> {
-    Logger logger = LoggerFactory.getLogger(AwaitTimedConsumer.class); // TODO: Delete
+/**
+ * @param <T> Awaiting consumer data
+ * @author Cloudy
+ */
+public interface AwaitTimedConsumer<T>
+        extends AwaitConsumer<T> {
+    /**
+     *
+     */
     Map<AwaitConsumer<?>, Integer> tasks = new HashMap<>();
 
     @Override
@@ -21,7 +26,6 @@ public interface AwaitTimedConsumer<T> extends AwaitConsumer<T> {
         tasks.put(this, Bukkit.getScheduler().scheduleSyncDelayedTask(
                 CoreRunnerPlugin.singleton,
                 () -> {
-                    logger.info("TIME DISMISS");
                     timeout();
                     AwaitConsumer.super.dismiss();
                     tasks.remove(self);
@@ -37,7 +41,6 @@ public interface AwaitTimedConsumer<T> extends AwaitConsumer<T> {
         if ((taskId = tasks.get(this)) == null)
             return;
 
-        logger.info("MANUAL DISMISS");
         Bukkit.getScheduler().cancelTask(taskId);
         tasks.remove(this);
     }
@@ -47,8 +50,16 @@ public interface AwaitTimedConsumer<T> extends AwaitConsumer<T> {
         AwaitConsumer.super.process(obj);
     }
 
+    /**
+     * The time in ticks for how long this await consumer processes.
+     *
+     * @return Time in ticks
+     */
     int ticks();
 
+    /**
+     * Invoked when {@link AwaitTimedConsumer#ticks()} time elapsed.
+     */
     default void timeout() {
     }
 }

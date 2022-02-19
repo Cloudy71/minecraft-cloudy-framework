@@ -11,8 +11,6 @@ import com.google.common.collect.ImmutableMap;
 import cz.cloudy.minecraft.core.LoggerFactory;
 import cz.cloudy.minecraft.core.componentsystem.ComponentLoader;
 import cz.cloudy.minecraft.core.componentsystem.ReflectionUtils;
-import cz.cloudy.minecraft.core.data_transforming.DataTransformer;
-import cz.cloudy.minecraft.core.data_transforming.interfaces.IDataTransformer;
 import cz.cloudy.minecraft.core.database.*;
 import cz.cloudy.minecraft.core.database.annotation.Default;
 import cz.cloudy.minecraft.core.database.enums.FetchLevel;
@@ -26,7 +24,6 @@ import cz.cloudy.minecraft.core.database.types.ClassScan;
 import cz.cloudy.minecraft.core.database.types.DatabaseConnectionData;
 import cz.cloudy.minecraft.core.database.types.FieldScan;
 import cz.cloudy.minecraft.core.types.Pair;
-import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
 
 import java.sql.*;
@@ -50,6 +47,9 @@ public class MysqlDatabaseProcessor
     private final Pattern paramPattern;
     private final Pattern attributePattern;
 
+    /**
+     * Default constructor.
+     */
     public MysqlDatabaseProcessor() {
         stringPattern = Pattern.compile("('.*?')");
         paramPattern = Pattern.compile(":([a-zA-Z0-9_]+)");
@@ -88,7 +88,7 @@ public class MysqlDatabaseProcessor
     // TODO: Alter table columns in case columns are missing or are deleted
     @Override
     public void buildTableStructure() {
-        Set<Pair<ClassScan, Set<FieldScan>>> scans = ComponentLoader.get(DatabaseEntityMapper.class).getMappedUnConstructedDatabaseEntityClasses();
+        Set<Pair<ClassScan, Set<FieldScan>>> scans = ComponentLoader.get(DatabaseEntityMapper.class).getMappedUnConstructedDatabaseEntityTypes();
         constraintList = new HashMap<>();
         indexList = new HashMap<>();
 
@@ -157,6 +157,8 @@ public class MysqlDatabaseProcessor
                         logger.error("Failed to alter table structure: ", e);
                     }
                 }
+                if (!constraints.isEmpty())
+                    constraintList.put(classScan, constraints);
             } else {
 
                 StringBuilder query = new StringBuilder()
@@ -321,12 +323,17 @@ public class MysqlDatabaseProcessor
         DatabaseEntityMapper entityMapper = ComponentLoader.get(DatabaseEntityMapper.class);
         FieldScan primaryKeyField = entityMapper.getPrimaryKeyFieldScan(clazz);
         Preconditions.checkNotNull(primaryKeyField);
-        if (primaryKeyField.transform() != null) {
-            IDataTransformer transformer = ComponentLoader.get(DataTransformer.class)
-                                                          .getUnknownDataTransformer(primaryKeyField.transform().value());
-            if (primaryKey.getClass() != transformer.getTypes().getValue())
-                primaryKey = transformer.transform0to1(primaryKey);
-        }
+        primaryKey = DatabaseEntityMapperAdapter.getForwardTransformedValue(
+                entityMapper,
+                primaryKeyField,
+                primaryKey
+        );
+//        if (primaryKeyField.transform() != null) {
+//            IDataTransformer transformer = ComponentLoader.get(DataTransformer.class)
+//                                                          .getUnknownDataTransformer(primaryKeyField.transform().value());
+//            if (primaryKey.getClass() != transformer.getTypes().getValue())
+//                primaryKey = transformer.transform0to1(primaryKey);
+//        }
         return findEntityData(
                 clazz,
                 primaryKeyField.column().value() + " = :pk",
@@ -337,38 +344,47 @@ public class MysqlDatabaseProcessor
         );
     }
 
+    private String buildConditionsForEntityData(String conditions, Map<String, String> translationMap) {
+        if (conditions == null || conditions.isEmpty())
+            return conditions;
+
+        conditions = conditions.replaceAll("\\.", "__"); // TODO: Could replace dots in strings
+        Matcher matcher = attributePattern.matcher(conditions);
+        int start = 0;
+        while (matcher.find(start)) {
+            if (matcher.start() > 0 && conditions.charAt(matcher.start() - 1) == ':') {
+                start = matcher.end();
+                continue;
+            }
+
+            String attributeName = conditions.substring(matcher.start(), matcher.end());
+            if (!translationMap.containsKey(attributeName)) {
+                start = matcher.end();
+                continue;
+            }
+            String mappedValue = translationMap.get(attributeName);
+            conditions = conditions.substring(0, matcher.start()) + mappedValue + conditions.substring(matcher.end());
+            start = matcher.start() + mappedValue.length();
+            matcher.reset(conditions);
+        }
+
+        return conditions;
+    }
+
     private String buildQueryForEntityData(Class<? extends DatabaseEntity> clazz, String conditions, FetchLevel fetchLevel, int from, int limit) {
         StringBuilder query = new StringBuilder();
         MysqlFetchData fetchData = (MysqlFetchData) getMapper().buildFetchDataForEntityType(clazz, fetchLevel);
         if (conditions != null && !conditions.isEmpty()) {
-            conditions = conditions.replaceAll("\\.", "__"); // TODO: Could replace dots in strings
-            Matcher matcher = attributePattern.matcher(conditions);
-            int start = 0;
-            while (matcher.find(start)) {
-                if (matcher.start() > 0 && conditions.charAt(matcher.start() - 1) == ':') {
-                    start = matcher.end();
-                    continue;
-                }
-
-                String attributeName = conditions.substring(matcher.start(), matcher.end());
-                if (!fetchData.getTranslationMap().containsKey(attributeName)) {
-                    start = matcher.end();
-                    continue;
-                }
-                String mappedValue = fetchData.getTranslationMap().get(attributeName);
-                conditions = conditions.substring(0, matcher.start()) + mappedValue + conditions.substring(matcher.end());
-                start = matcher.start() + mappedValue.length();
-                matcher.reset(conditions);
-            }
+            conditions = buildConditionsForEntityData(conditions, fetchData.translationMap());
         }
 
         query.append("SELECT ")
-             .append(fetchData.getSelectQuery())
+             .append(fetchData.selectQuery())
              .append(" FROM ")
-             .append(fetchData.getFromQuery());
-        for (int i = 0; i < fetchData.getJoinQuery().size(); i++) {
+             .append(fetchData.fromQuery());
+        for (int i = 0; i < fetchData.joinQuery().size(); i++) {
             query.append(" JOIN ")
-                 .append(fetchData.getJoinQuery().get(i));
+                 .append(fetchData.joinQuery().get(i));
         }
         query.append(conditions != null ? (" WHERE " + conditions + " ") : "")
              .append(limit != -1 ? (" LIMIT " + limit) : "")
@@ -418,7 +434,7 @@ public class MysqlDatabaseProcessor
         StringBuilder query = new StringBuilder();
         StringBuilder fields = new StringBuilder();
         StringBuilder values = new StringBuilder();
-        List<FieldScan> fieldScans = entityMapper.getFieldScansForEntityClass(entity.getClass());
+        List<FieldScan> fieldScans = entityMapper.getFieldScansForEntityType(entity.getClass());
         Map<String, Object> parameters = new HashMap<>();
         int v = 0;
         boolean autoIncrement = false;
@@ -458,7 +474,7 @@ public class MysqlDatabaseProcessor
         }
 
         query.append("INSERT INTO ")
-             .append(entityMapper.getClassScanForEntityClass(entity.getClass()).table().value())
+             .append(entityMapper.getClassScanForEntityType(entity.getClass()).table().value())
              .append(" (")
              .append(fields)
              .append(") VALUES (")
@@ -497,7 +513,7 @@ public class MysqlDatabaseProcessor
         DatabaseEntityMapper entityMapper = ComponentLoader.get(DatabaseEntityMapper.class);
         StringBuilder query = new StringBuilder();
         StringBuilder fields = new StringBuilder();
-        List<FieldScan> fieldScans = entityMapper.getFieldScansForEntityClass(entity.getClass());
+        List<FieldScan> fieldScans = entityMapper.getFieldScansForEntityType(entity.getClass());
         Map<String, Object> parameters = new HashMap<>();
         int v = 0;
         for (FieldScan fieldScan : fieldScans) {
@@ -535,7 +551,7 @@ public class MysqlDatabaseProcessor
         FieldScan primaryKeyFieldScan = entityMapper.getPrimaryKeyFieldScan(entity.getClass());
 
         query.append("UPDATE ")
-             .append(entityMapper.getClassScanForEntityClass(entity.getClass()).table().value())
+             .append(entityMapper.getClassScanForEntityType(entity.getClass()).table().value())
              .append(" SET ")
              .append(fields)
              .append(" WHERE ")
@@ -554,18 +570,62 @@ public class MysqlDatabaseProcessor
     public void deleteEntity(DatabaseEntity entity) {
         DatabaseEntityMapper entityMapper = ComponentLoader.get(DatabaseEntityMapper.class);
         FieldScan primaryKeyFieldScan = entityMapper.getPrimaryKeyFieldScan(entity.getClass());
-        Object databasePrimaryKey = primaryKeyFieldScan.getDatabaseValue(entity);
+//        Object databasePrimaryKey = primaryKeyFieldScan.getDatabaseValue(entity);
+//
+//        String query = "DELETE FROM " +
+//                       entityMapper.getClassScanForEntityClass(entity.getClass()).table().value() +
+//                       " WHERE " +
+//                       primaryKeyFieldScan.column().value() +
+//                       "=:pk";
+//
+//        ComponentLoader.get(Database.class)
+//                       .processQuery(Query.builder()
+//                                          .rawDMLOrDDL(query)
+//                                          .build(),
+//                                     ImmutableMap.of("pk", databasePrimaryKey));
+        deleteEntity(
+                entity.getClass(),
+                ReflectionUtils.getValueOpt(primaryKeyFieldScan.field(), entity).orElseThrow()
+        );
+    }
+
+    @Override
+    public void deleteEntity(Class<? extends DatabaseEntity> type, Object primaryKey) {
+        DatabaseEntityMapper entityMapper = ComponentLoader.get(DatabaseEntityMapper.class);
+        FieldScan primaryKeyField = entityMapper.getPrimaryKeyFieldScan(type);
+        Preconditions.checkNotNull(primaryKeyField);
+        primaryKey = DatabaseEntityMapperAdapter.getForwardTransformedValue(
+                entityMapper,
+                primaryKeyField,
+                primaryKey
+        );
 
         String query = "DELETE FROM " +
-                       entityMapper.getClassScanForEntityClass(entity.getClass()).table().value() +
+                       entityMapper.getClassScanForEntityType(type).table().value() +
                        " WHERE " +
-                       primaryKeyFieldScan.column().value() +
+                       primaryKeyField.column().value() +
                        "=:pk";
 
         ComponentLoader.get(Database.class)
                        .processQuery(Query.builder()
                                           .rawDMLOrDDL(query)
                                           .build(),
-                                     ImmutableMap.of("pk", databasePrimaryKey));
+                                     ImmutableMap.of("pk", primaryKey));
+    }
+
+    @Override
+    public void deleteEntities(Class<? extends DatabaseEntity> type, String conditions, Map<String, Object> parameters) {
+        DatabaseEntityMapper entityMapper = ComponentLoader.get(DatabaseEntityMapper.class);
+
+        String query = "DELETE FROM " +
+                       entityMapper.getClassScanForEntityType(type).table().value() +
+                       " WHERE " +
+                       conditions;
+
+        ComponentLoader.get(Database.class)
+                       .processQuery(Query.builder()
+                                          .rawDMLOrDDL(query)
+                                          .build(),
+                                     parameters);
     }
 }

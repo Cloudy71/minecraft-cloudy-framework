@@ -17,6 +17,12 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface MultiIndex {
+    /**
+     * Byte id of multi index.
+     * Fields sharing same index will be used in the same index.
+     *
+     * @return Byte
+     */
     byte value(); // Index ID for entity
 
 //    boolean unique() default false;

@@ -23,6 +23,12 @@ public class DMLOrDDLQueryResult
     private final Statement statement;
     private final int       result;
 
+    /**
+     * Default constructor
+     *
+     * @param statement Statement
+     * @param result    Result
+     */
     public DMLOrDDLQueryResult(Statement statement, int result) {
         this.statement = statement;
         this.result = result;
@@ -44,15 +50,15 @@ public class DMLOrDDLQueryResult
     }
 
     @Override
-    public List<Object> getData(int rowNumber) {
-        if (rowNumber == 0)
+    public List<Object> getData(int rowIndex) {
+        if (rowIndex == 0)
             return ImmutableList.of(result);
         return ImmutableList.of();
     }
 
     @Override
-    public Map<String, Object> getDataMap(int rowNumber) {
-        if (rowNumber == 0)
+    public Map<String, Object> getDataMap(int rowIndex) {
+        if (rowIndex == 0)
             return ImmutableMap.of("result", result);
         return ImmutableMap.of();
     }
@@ -62,10 +68,20 @@ public class DMLOrDDLQueryResult
         return ImmutableList.of(getDataMap(0));
     }
 
+    /**
+     * Getter for statement
+     *
+     * @return Statement
+     */
     public Statement getStatement() {
         return statement;
     }
 
+    /**
+     * Getter for result number.
+     *
+     * @return Result number
+     */
     public int getResult() {
         return result;
     }

@@ -15,15 +15,31 @@ public class CommandHandlerMethod {
     private final Object component;
     private final Method method;
 
+    /**
+     * -
+     *
+     * @param component -
+     * @param method    -
+     */
     public CommandHandlerMethod(Object component, Method method) {
         this.component = component;
         this.method = method;
     }
 
+    /**
+     * Getter for component
+     *
+     * @return Component
+     */
     public Object getComponent() {
         return component;
     }
 
+    /**
+     * Getter for method
+     *
+     * @return Method
+     */
     public Method getMethod() {
         return method;
     }

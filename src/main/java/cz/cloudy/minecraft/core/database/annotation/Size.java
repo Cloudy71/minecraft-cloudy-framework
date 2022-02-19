@@ -17,8 +17,19 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Size {
+    /**
+     * Size of ID.
+     */
     int IDSize      = 11;
+    /**
+     * Default size.
+     */
     int DefaultSize = 32;
 
+    /**
+     * Size of database field.
+     *
+     * @return Integer
+     */
     int value();
 }

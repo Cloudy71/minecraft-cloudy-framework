@@ -10,5 +10,10 @@ package cz.cloudy.minecraft.core.componentsystem.interfaces;
  * @author Cloudy
  */
 public interface IComponentLoadListener {
+    /**
+     * Is invoked when new component is loaded.
+     *
+     * @param component Component
+     */
     void load(Object component);
 }

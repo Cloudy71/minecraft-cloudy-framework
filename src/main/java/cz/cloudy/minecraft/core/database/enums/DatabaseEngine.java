@@ -18,12 +18,22 @@ import java.util.Map;
 public class DatabaseEngine {
     private static final Map<String, DatabaseEngine> engineMap = new HashMap<>();
 
+    /**
+     * MySQL database engine.
+     */
     public static final DatabaseEngine MySQL = new DatabaseEngine("mysql", "jdbc:mysql://%host:%port/%db?autoReconnect=true", MysqlDatabaseProcessor.class);
 
     private final String                                 name;
     private final String                                 expression;
     private final Class<? extends IDatabaseProcessor<?>> engineClass;
 
+    /**
+     * Default constructor.
+     *
+     * @param name        Name
+     * @param resolver    Resolver
+     * @param engineClass Engine type
+     */
     protected DatabaseEngine(String name, String resolver, Class<? extends IDatabaseProcessor<?>> engineClass) {
         this.name = name;
         this.expression = resolver;
@@ -31,18 +41,41 @@ public class DatabaseEngine {
         engineMap.put(name, this);
     }
 
+    /**
+     * Getter for name.
+     *
+     * @return Name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Getter for expression.
+     *
+     * @return Expression
+     */
     public String getExpression() {
         return expression;
     }
 
+    /**
+     * Getter for engine type.
+     *
+     * @return Engine type
+     */
     public Class<? extends IDatabaseProcessor<?>> getEngineClass() {
         return engineClass;
     }
 
+    /**
+     * Resolves url by database data.
+     *
+     * @param host Host
+     * @param port Port
+     * @param db   Database
+     * @return Resolved url
+     */
     public String resolveUrl(String host, int port, String db) {
         return getExpression()
                 .replaceAll("%host", host)
@@ -50,6 +83,12 @@ public class DatabaseEngine {
                 .replaceAll("%db", db);
     }
 
+    /**
+     * Resolves engine by its name.
+     *
+     * @param name Name
+     * @return Engine by name or null
+     */
     public static DatabaseEngine resolveEngine(String name) {
         return engineMap.get(name);
     }

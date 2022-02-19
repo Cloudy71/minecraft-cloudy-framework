@@ -13,6 +13,9 @@ import cz.cloudy.minecraft.core.scoreboard.ScoreboardObject;
  */
 public class SpaceScoreboardField
         extends ScoreScoreboardField {
+    /**
+     * Default constructor.
+     */
     public SpaceScoreboardField() {
         super("");
     }

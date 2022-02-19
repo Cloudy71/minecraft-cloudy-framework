@@ -33,6 +33,15 @@ public class Hashing {
         }
     }
 
+    /**
+     * Hashes input string with provided algorithm and key.
+     * Result string character set are raw bytes.
+     *
+     * @param input     Input
+     * @param algorithm Algorithm
+     * @param key       Key
+     * @return Hashed string
+     */
     public String hashStringChar(String input, HashingAlgorithm algorithm, String key) {
         byte[] bytes = getBytes(input, algorithm, key);
         if (bytes == null)
@@ -41,7 +50,15 @@ public class Hashing {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
-
+    /**
+     * Hashes input string with provided algorithm and key.
+     * Result string character set are raw bytes transformed into split hex values.
+     *
+     * @param input     Input
+     * @param algorithm Algorithm
+     * @param key       Key
+     * @return Hashed string
+     */
     public String hashStringHex(String input, HashingAlgorithm algorithm, String key) {
         byte[] bytes = getBytes(input, algorithm, key);
         if (bytes == null)

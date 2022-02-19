@@ -17,5 +17,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Index {
+    /**
+     * If index is unique.
+     *
+     * @return Boolean
+     */
     boolean unique() default false;
 }

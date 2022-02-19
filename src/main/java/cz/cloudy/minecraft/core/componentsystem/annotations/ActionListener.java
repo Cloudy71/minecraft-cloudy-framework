@@ -17,7 +17,19 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface ActionListener {
+    /**
+     * The name of action to listen to.
+     * Name of action's plugin must be always a prefix of name (e.g. LoginSystem.Login)
+     *
+     * @return name
+     */
     String value(); // Listener name
 
+    /**
+     * ActionListener's run priority.
+     * Higher means earlier in execution order.
+     *
+     * @return priority
+     */
     int priority() default 0;
 }

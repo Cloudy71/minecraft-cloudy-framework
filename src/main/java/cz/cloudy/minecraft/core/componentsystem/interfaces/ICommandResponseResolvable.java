@@ -13,5 +13,11 @@ import net.kyori.adventure.text.Component;
  * @author Cloudy
  */
 public interface ICommandResponseResolvable {
+    /**
+     * Creates new component from provided data.
+     *
+     * @param commandData Command data
+     * @return Component
+     */
     Component getComponent(CommandData commandData);
 }
