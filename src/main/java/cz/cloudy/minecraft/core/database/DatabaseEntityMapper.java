@@ -228,7 +228,7 @@ public class DatabaseEntityMapper
         if (fieldScan.transform() != null) {
             IDataTransformer transformer = dataTransformer.getUnknownDataTransformer(fieldScan.transform().value());
             Class<?> requiredType = (Class<?>) transformer.getTypes().getKey();
-            if (value.getClass() == requiredType)
+            if (requiredType.isAssignableFrom(value.getClass()))
                 value = transformer.transform0to1(value);
         }
 
@@ -253,7 +253,7 @@ public class DatabaseEntityMapper
             IDataTransformer transformer = dataTransformer.getUnknownDataTransformer(fieldScan.transform().value());
             Class<?> requiredType = (Class<?>) transformer.getTypes().getValue();
             value = getPrimitiveTransformedValue(value, requiredType);
-            if (value.getClass() == requiredType)
+            if (requiredType.isAssignableFrom(value.getClass()))
                 value = transformer.transform1to0(value);
         } else if (value.getClass() == Timestamp.class) {
             Timestamp timestamp = (Timestamp) value;

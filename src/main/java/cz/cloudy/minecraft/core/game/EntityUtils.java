@@ -9,7 +9,6 @@ package cz.cloudy.minecraft.core.game;
 import cz.cloudy.minecraft.core.componentsystem.annotations.Component;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
-import org.bukkit.metadata.Metadatable;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
@@ -21,40 +20,6 @@ import java.util.stream.Collectors;
  */
 @Component
 public class EntityUtils {
-
-    /**
-     * Returns metadata of metadatable object
-     * If object doesn't have such metadata, default value is returned
-     *
-     * @param entity Metadatable object
-     * @param name   Metadata name
-     * @param def    Default value if no metadata with name are found
-     * @param <T>    Return type
-     * @return Metadata value or default if metadata with specified name are missing
-     * @deprecated Use {@link MetaUtils#getMetadata(Metadatable, String, Object)} instead
-     */
-    @Deprecated(forRemoval = true, since = "1.18.5")
-    public <T> T getMetadata(Metadatable entity, String name, T def) {
-        if (!entity.hasMetadata(name))
-            return def;
-
-        return (T) entity.getMetadata(name).get(0).value();
-    }
-
-    /**
-     * Returns metadata of metadatable object
-     * If object doesn't have such metadata, null is returned
-     *
-     * @param entity Metadatable object
-     * @param name   Metadata name
-     * @param <T>    Return type
-     * @return Metadata value or null if metadata with specified name are missing
-     * @deprecated Use {@link MetaUtils#getMetadata(Metadatable, String)} instead
-     */
-    @Deprecated(forRemoval = true, since = "1.18.5")
-    public <T> T getMetadata(Metadatable entity, String name) {
-        return getMetadata(entity, name, null);
-    }
 
     /**
      * Returns set of entities which are nearby specified center point of specified radius.

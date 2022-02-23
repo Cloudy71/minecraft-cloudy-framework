@@ -38,10 +38,7 @@ import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -285,6 +282,10 @@ public class ComponentLoader {
 
                 c.onClassScan(caller, entry.getValue());
             }
+
+            for (Class<?> type : entry.getValue()) {
+                registerWorldFilters(type);
+            }
         }
 
         oldComponentScans.addAll(componentScans);
@@ -320,6 +321,7 @@ public class ComponentLoader {
      * @param caller Plugin
      */
     public void startComponents(CorePlugin caller) {
+        ComponentStaticDataInitializer.init();
         componentMap.values().stream()
                     .filter(componentData -> componentData.plugin() == caller && componentData.component() instanceof IComponent)
                     .forEach(componentData -> ((IComponent) componentData.component()).onStart());
@@ -490,6 +492,20 @@ public class ComponentLoader {
         actions.add(new ActionListenerData(component, actionListener, method));
         actions.sort((o1, o2) -> Integer.compare(o2.actionListener().priority(), o1.actionListener().priority()));
         logger.info("Registered action listener on " + component.getClass().getSimpleName() + ".\"" + name + "\".");
+    }
+
+    private void registerWorldFilters(Class<?> type) {
+        ReflectionUtils.getAllClassFields(type).stream()
+                       .filter(field -> Modifier.isStatic(field.getModifiers()) && String[].class.isAssignableFrom(field.getType()) &&
+                                        field.getAnnotation(WorldFilter.class) != null)
+                       .forEach(field -> {
+                           WorldFilter worldFilter = field.getAnnotation(WorldFilter.class);
+                           boolean exists = ComponentStaticDataInitializer.worldFilters.containsKey(worldFilter.name());
+                           String[] worlds = (String[]) ReflectionUtils.getValueOpt(field, null).orElse(new String[0]);
+                           ComponentStaticDataInitializer.worldFilters.computeIfAbsent(worldFilter.name(), s -> new ArrayList<>())
+                                                                      .addAll(Arrays.asList(worlds));
+                           logger.info("World filter was {} with worlds: {}", exists ? "modified" : "added", String.join(", ", worlds));
+                       });
     }
 
     /**

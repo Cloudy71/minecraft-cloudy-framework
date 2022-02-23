@@ -37,7 +37,7 @@ public @interface Cached {
      * @return Boolean
      * @since 1.18.6
      */
-    boolean saveNull() default false;
+    boolean saveNull() default true;
 
     /**
      * The maximum of entries in method cache.

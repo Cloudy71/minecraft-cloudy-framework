@@ -29,7 +29,7 @@ public class ReflectionUtils {
      */
     public static List<Field> getAllClassFields(Class<?> clazz) {
         List<Field> fields = new ArrayList<>(Arrays.stream(clazz.getDeclaredFields()).toList());
-        if (clazz.getSuperclass() != Object.class)
+        if (clazz.getSuperclass() != null && clazz.getSuperclass() != Object.class)
             fields.addAll(getAllClassFields(clazz.getSuperclass()));
         return fields;
     }

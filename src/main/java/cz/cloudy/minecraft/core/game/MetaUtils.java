@@ -6,7 +6,9 @@
 
 package cz.cloudy.minecraft.core.game;
 
+import cz.cloudy.minecraft.core.CoreRunnerPlugin;
 import cz.cloudy.minecraft.core.componentsystem.annotations.Component;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.metadata.Metadatable;
 
 /**
@@ -44,5 +46,17 @@ public class MetaUtils {
      */
     public <T> T getMetadata(Metadatable metadatable, String name) {
         return getMetadata(metadatable, name, null);
+    }
+
+    /**
+     * Sets metadata of metadatable object saved under {@link cz.cloudy.minecraft.core.CoreRunnerPlugin}.
+     *
+     * @param metadatable Metadatable object
+     * @param name        Metadata name
+     * @param value       Value
+     * @since 1.18.7
+     */
+    public void setMetadata(Metadatable metadatable, String name, Object value) {
+        metadatable.setMetadata(name, new FixedMetadataValue(CoreRunnerPlugin.singleton, value));
     }
 }

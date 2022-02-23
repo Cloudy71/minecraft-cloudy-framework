@@ -1,7 +1,7 @@
 /*
   User: Cloudy
   Date: 19/02/2022
-  Time: 13:37
+  Time: 14:52
 */
 
 package cz.cloudy.minecraft.core.componentsystem.annotations;
@@ -10,21 +10,26 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Cloudy
- * @since 1.18.6
+ * @since 1.18.7
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-public @interface Benchmarked {
+public @interface Cooldown {
+    /**
+     * The cooldown duration in milliseconds.
+     *
+     * @return Integer
+     */
+    long value();
 
     /**
-     * Time unit in which statistics will be outputted.
+     * If set to true, last returned value from this method will be given,
+     * otherwise a null is given.
      *
-     * @return Time unit
-     * @since 1.18.7
+     * @return Boolean
      */
-    TimeUnit unit() default TimeUnit.MILLISECONDS;
+    boolean returnLastValue() default true;
 }

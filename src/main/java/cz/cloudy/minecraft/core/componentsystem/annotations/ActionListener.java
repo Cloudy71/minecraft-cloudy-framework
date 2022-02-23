@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
 public @interface ActionListener {
     /**
      * The name of action to listen to.
-     * Name of action's plugin must be always a prefix of name (e.g. LoginSystem.Login)
+     * Name must always contain a plugin's name from which action comes as a prefix (e.g. "LoginSystem.login")
      *
      * @return name
      */
