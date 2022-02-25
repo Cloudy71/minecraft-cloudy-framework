@@ -49,7 +49,10 @@ public class Scoreboard
                     if (entries.isEmpty())
                         return;
                     for (Player player : Bukkit.getOnlinePlayers()) {
-                        for (ScoreboardObject object : entries.get(player)) {
+                        List<ScoreboardObject> list = entries.get(player);
+                        if (list == null)
+                            continue;
+                        for (ScoreboardObject object : list) {
                             object.update();
                         }
                     }
